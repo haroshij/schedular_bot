@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
 from uuid import uuid4
 
 
@@ -15,7 +15,7 @@ class Task:
     def postpone(self, delta: timedelta):
         self.scheduled_time += delta
 
-    def mark_complete(self):
+    def mark_completed(self):
         self.completed = True
         if self.repeat_interval:
             self.scheduled_time += self.repeat_interval

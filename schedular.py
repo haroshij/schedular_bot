@@ -28,3 +28,9 @@ class Scheduler:
             _, _, task = heapq.heappop(self.tasks_heap)
             due_tasks.append(task)
         return due_tasks
+
+    def find_task_by_id(self, task_id):
+        for _, _, task in self.tasks_heap:
+            if task.id == task_id:
+                return task
+        return None
