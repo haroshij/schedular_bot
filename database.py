@@ -112,7 +112,7 @@ async def get_user_city(user_id: int) -> Optional[str]:
         return row["city"] if row else None
 
 
-async def set_user_city(user_id: int, city: str):
+async def set_user_city(user_id: int|None, city: str):
     async with aiosqlite.connect(DB_NAME) as conn:
         await conn.execute(
             """

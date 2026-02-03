@@ -1,31 +1,41 @@
-import aiohttp
+import asyncio
+from duckduckgo_search import DDGS
 
-API_KEY = "ВАШ_GOOGLE_API_KEY"
-CX = "ВАШ_SEARCH_ENGINE_ID"
-
-async def search_google(query: str) -> list[str]:
+async def search_duckduckgo(query: str) -> list[str]:
     """
-    Асинхронный поиск через Google Custom Search API.
-    Возвращает список первых 5 ссылок.
+    Асинхронный поиск через duckduckgo_search.
+    Оборачивает синхронный DDGS().text() в executor, чтобы не блокировать цикл.
     """
-    url = "https://www.googleapis.com/customsearch/v1"
-    params = {
-        "key": API_KEY,
-        "cx": CX,
-        "q": query,
-        "num": 5
-    }
+    loop = asyncio.get_event_loop()
 
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url, params=params) as resp:
-            if resp.status != 200:
-                return [f"Ошибка поиска: {resp.status}"]
+    try:
+        results = await loop.run_in_executor(
+            None,
+            lambda: DDGS().text(query, region="wt-wt", max_results=5)
+        )
+    except Exception as e:
+        return [f"Ошибка поиска: {e}"]
 
-            data = await resp.json()
-            items = data.get("items", [])
-            results = []
-            for item in items:
-                title = item.get("title")
-                link = item.get("link")
-                results.append(f"{title}\n{link}")
-            return results
+    output = []
+    if results:
+        for item in results:
+            # duckduckgo-search возвращает словари с ключами 'title' и 'href'
+            title = item.get("title")
+            link = item.get("href")
+            if title and link:
+                output.append(f"{title}\n{link}")
+    else:
+        output.append("Ничего не найдено.")
+
+    return output
+
+
+# Пример запуска
+async def main():
+    query = input("Введите запрос для поиска:")
+    res = await search_duckduckgo(query)
+    for r in res:
+        print(r, "\n")
+
+if __name__ == "__main__":
+    asyncio.run(main())
