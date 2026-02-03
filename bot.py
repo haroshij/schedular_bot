@@ -5,7 +5,7 @@ from telegram.ext import (
     CallbackQueryHandler,
     MessageHandler,
     filters,
-    CallbackContext
+    CallbackContext,
 )
 from states import *
 from keyboard import MAIN_MENU, task_actions
@@ -19,6 +19,7 @@ from database import (
 )
 from utils import parse_datetime, format_task
 from handlers.search import search_google
+from handlers.weather import get_weather
 from uuid import uuid4
 
 # ---------------- START ----------------
@@ -121,8 +122,8 @@ async def callbacks(update: Update, context: CallbackContext):
         await query.edit_message_text("Введите запрос для поиска:")
         return SEARCH_QUERY
     elif data == "weather":
-        from handlers.weather import weather_handler
-        await weather_handler(update, context)
+        await query.edit_message_text("Введите ваш город для прогноза погоды:")
+        return WEATHER_CITY
 
     return None
 
@@ -148,6 +149,21 @@ async def search_query(update: Update, _: CallbackContext):
     query_text = update.message.text
     results = await search_google(query_text)
     await update.message.reply_text("\n\n".join(results), reply_markup=MAIN_MENU)
+    return ConversationHandler.END
+
+# ---------------- WEATHER ----------------
+async def weather_city(update: Update, _: CallbackContext):
+    city = update.message.text.strip()
+    data = await get_weather(city)
+
+    if "error" in data:
+        text = f"Ошибка получения погоды для города {city}.\n{data['error']}"
+    else:
+        description = data.get("weather", [{"description": "Нет данных"}])[0]["description"]
+        temp = data.get("main", {}).get("temp", "?")
+        text = f"🌤 {city}\n{description}\n🌡 {temp}°C"
+
+    await update.message.reply_text(text, reply_markup=MAIN_MENU)
     return ConversationHandler.END
 
 # ---------------- MAIN ----------------
@@ -182,11 +198,21 @@ def main():
         fallbacks=[]
     )
 
+    # Weather
+    weather_conv = ConversationHandler(
+        entry_points=[CallbackQueryHandler(callbacks, pattern="^weather$")],
+        states={
+            WEATHER_CITY: [MessageHandler(filters.TEXT & ~filters.COMMAND, weather_city)]
+        },
+        fallbacks=[]
+    )
+
     # Handlers
     app.add_handler(CommandHandler("start", start))
     app.add_handler(add_task_conv)
     app.add_handler(postpone_conv)
     app.add_handler(search_conv)
+    app.add_handler(weather_conv)
     app.add_handler(CallbackQueryHandler(callbacks))
 
     print("🤖 Бот запущен")
