@@ -1,29 +1,29 @@
-from datetime import timedelta
+from datetime import datetime
+from typing import Dict
 
-def parse_time_interval(text):
-    """
-    Преобразует текст вроде "10m", "1h", "2d" в timedelta
-    Поддерживаем:
-        m - минуты
-        h - часы
-        d - дни
-        w - недели
-    """
-    unit = text[-1]
-    value = int(text[:-1])
 
-    if unit == "m":
-        return timedelta(minutes=value)
-    elif unit == "h":
-        return timedelta(hours=value)
-    elif unit == "d":
-        return timedelta(days=value)
-    elif unit == "w":
-        return timedelta(weeks=value)
-    else:
-        raise ValueError("Неподдерживаемый формат времени. Используй m, h, d, w.")
+def parse_datetime(text: str) -> datetime | None:
+    """Парсит дату из строки в формате YYYY-MM-DD HH:MM"""
+    try:
+        return datetime.strptime(text.strip(), "%Y-%m-%d %H:%M")
+    except ValueError:
+        return None
 
-def format_task(task):
-    """Красивый вывод задачи"""
-    repeat = f", повтор каждые {task.repeat_interval}" if task.repeat_interval else ""
-    return f"{task.title} | Время: {task.scheduled_time}{repeat} | Приоритет: {task.priority}"
+
+def format_task(task: Dict) -> str:
+    """Форматирует задачу для отображения пользователю"""
+    title = task.get("title", "Без названия")
+    scheduled_time = task.get("scheduled_time", "?")
+
+    # Если scheduled_time хранится как ISO, можно преобразовать
+    if isinstance(scheduled_time, str):
+        try:
+            dt = datetime.fromisoformat(scheduled_time)
+            scheduled_time = dt.strftime("%Y-%m-%d %H:%M")
+        except ValueError:
+            pass
+
+    status = task.get("status", "pending")
+    status_icon = "✅" if status == "done" else "⏳"
+
+    return f"{status_icon} 📝 {title}\n⏰ {scheduled_time}"

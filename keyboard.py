@@ -1,22 +1,25 @@
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 
-def task_action_keyboard(task_id: str):
+# Главное меню
+MAIN_MENU = InlineKeyboardMarkup([
+    [
+        InlineKeyboardButton("➕ Добавить задачу", callback_data="add_task"),
+        InlineKeyboardButton("⏭ Ближайшая задача", callback_data="nearest_task")
+    ],
+    [
+        InlineKeyboardButton("📋 Все задачи", callback_data="all_tasks"),
+        InlineKeyboardButton("🔍 Найти", callback_data="search")
+    ],
+    [
+        InlineKeyboardButton("🌤 Текущая погода", callback_data="weather")
+    ]
+])
+
+# Кнопки действий для отдельной задачи
+def task_actions(task_id: str):
     return InlineKeyboardMarkup([
         [
-            InlineKeyboardButton("✅ Выполнил", callback_data=f"done:{task_id}"),
-            InlineKeyboardButton("⏳ Отложить", callback_data=f"postpone_menu:{task_id}")
-        ]
-    ])
-
-
-def postpone_keyboard(task_id: str):
-    return InlineKeyboardMarkup([
-        [
-            InlineKeyboardButton("10 мин", callback_data=f"postpone:{task_id}:10m"),
-            InlineKeyboardButton("1 час", callback_data=f"postpone:{task_id}:1h"),
-        ],
-        [
-            InlineKeyboardButton("1 день", callback_data=f"postpone:{task_id}:1d"),
-            InlineKeyboardButton("1 неделя", callback_data=f"postpone:{task_id}:1w"),
+            InlineKeyboardButton("✅ Выполнена", callback_data=f"done:{task_id}"),
+            InlineKeyboardButton("⏳ Отложить", callback_data=f"postpone:{task_id}")
         ]
     ])

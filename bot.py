@@ -1,170 +1,198 @@
 from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, CallbackQueryHandler
-from datetime import datetime, timedelta
-import asyncio
+from telegram.ext import (
+    ApplicationBuilder,
+    CommandHandler,
+    CallbackQueryHandler,
+    MessageHandler,
+    filters,
+    CallbackContext
+)
+from states import *
+from keyboard import MAIN_MENU, task_actions
+from database import (
+    init_db,
+    add_task,
+    get_nearest_task,
+    get_all_tasks,
+    update_task_time,
+    mark_task_done,
+)
+from utils import parse_datetime, format_task
+from handlers.search import search_google
+from uuid import uuid4
 
-from schedular import Scheduler
-from task import Task
-from storage import load_tasks, save_tasks
-from utils import parse_time_interval, format_task
+# ---------------- START ----------------
+async def start(update: Update, _: CallbackContext):
+    if update.message:
+        await update.message.reply_text("Привет! Выбери действие 👇", reply_markup=MAIN_MENU)
 
-from keyboard import task_action_keyboard, postpone_keyboard
-from utils import parse_time_interval
+# ---------------- ADD TASK ----------------
+async def add_task_start(update: Update, _: CallbackContext):
+    query = update.callback_query
+    if query:
+        await query.answer()
+        await query.edit_message_text("Введи дату и время в формате:\nYYYY-MM-DD HH:MM")
+    return ADD_DATE
 
-scheduler = Scheduler()
+async def add_task_date(update: Update, context: CallbackContext):
+    text = update.message.text
+    dt = parse_datetime(text)
+    if not dt:
+        await update.message.reply_text("❌ Неверный формат. Попробуй ещё раз.")
+        return ADD_DATE
+    context.user_data["task_time"] = dt
+    await update.message.reply_text("Теперь введи текст задачи")
+    return ADD_TEXT
 
+async def add_task_text(update: Update, context: CallbackContext):
+    await add_task(
+        task_id=str(uuid4()),
+        user_id=update.effective_user.id,
+        title=update.message.text,
+        scheduled_time=context.user_data["task_time"],
+    )
+    await update.message.reply_text("✅ Задача добавлена", reply_markup=MAIN_MENU)
+    return ConversationHandler.END
 
-# ---------- Инициализация ----------
-def load_from_storage():
-    tasks = load_tasks()
-    for task in tasks:
-        scheduler.add_task(task)
-
-
-def persist():
-    tasks = [item[2] for item in scheduler.tasks_heap]
-    save_tasks(tasks)
-
-
-# ---------- Команды ----------
-async def add_task(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """
-    /add 10m Купить хлеб
-    /add 1h Повторяющаяся задача
-    """
+# ---------------- NEAREST TASK ----------------
+async def nearest_task(update: Update, _: CallbackContext):
     user_id = update.effective_user.id
-    args = context.args
-
-    if len(args) < 2:
-        await update.message.reply_text(
-            "Используй: /add <время (10m, 1h, 2d)> <текст>"
-        )
+    task = await get_nearest_task(user_id)
+    query = update.callback_query
+    if not task:
+        if query:
+            await query.edit_message_text("У тебя нет задач", reply_markup=MAIN_MENU)
+        elif update.message:
+            await update.message.reply_text("У тебя нет задач", reply_markup=MAIN_MENU)
         return
 
-    try:
-        delta = parse_time_interval(args[0])
-    except ValueError as e:
-        await update.message.reply_text(str(e))
+    text = format_task(task)
+    if query:
+        await query.edit_message_text(text, reply_markup=task_actions(task["id"]))
+    elif update.message:
+        await update.message.reply_text(text, reply_markup=task_actions(task["id"]))
+
+# ---------------- ALL TASKS ----------------
+async def all_tasks(update: Update, _: CallbackContext):
+    tasks = await get_all_tasks(update.effective_user.id)
+    query = update.callback_query
+    if not tasks:
+        if query:
+            await query.edit_message_text("Список задач пуст", reply_markup=MAIN_MENU)
+        elif update.message:
+            await update.message.reply_text("Список задач пуст", reply_markup=MAIN_MENU)
         return
 
-    title = " ".join(args[1:])
-    scheduled_time = datetime.now() + delta
+    text = "\n\n".join(format_task(t) for t in tasks)
+    if query:
+        await query.edit_message_text(text, reply_markup=MAIN_MENU)
+    elif update.message:
+        await update.message.reply_text(text, reply_markup=MAIN_MENU)
 
-    task = Task(
-        title=title,
-        user_id=user_id,
-        scheduled_time=scheduled_time
+# ---------------- CALLBACKS ----------------
+async def callbacks(update: Update, context: CallbackContext):
+    query = update.callback_query
+    if not query:
+        return None
+
+    await query.answer()
+    data = query.data
+
+    # Кнопки задач с ":"
+    if ":" in data:
+        action, task_id = data.split(":")
+        if action == "done":
+            await mark_task_done(task_id)
+            await query.edit_message_text("✅ Задача выполнена", reply_markup=MAIN_MENU)
+        elif action == "postpone":
+            context.user_data["task_id"] = task_id
+            await query.edit_message_text("Введи новую дату:\nYYYY-MM-DD HH:MM")
+            return POSTPONE_DATE
+        return None
+
+    # Главное меню
+    if data == "add_task":
+        return await add_task_start(update, context)
+    elif data == "nearest_task":
+        await nearest_task(update, context)
+    elif data == "all_tasks":
+        await all_tasks(update, context)
+    elif data == "search":
+        await query.edit_message_text("Введите запрос для поиска:")
+        return SEARCH_QUERY
+    elif data == "weather":
+        from handlers.weather import weather_handler
+        await weather_handler(update, context)
+
+    return None
+
+# ---------------- POSTPONE ----------------
+async def postpone_date(update: Update, context: CallbackContext):
+    dt = parse_datetime(update.message.text)
+    if not dt:
+        await update.message.reply_text("❌ Неверный формат")
+        return POSTPONE_DATE
+
+    await update_task_time(context.user_data["task_id"], dt)
+    await update.message.reply_text("⏳ Задача отложена", reply_markup=MAIN_MENU)
+    return ConversationHandler.END
+
+# ---------------- SEARCH ----------------
+async def search_start(update: Update, _: CallbackContext):
+    query = update.callback_query
+    if query:
+        await query.edit_message_text("Что ищем?")
+    return SEARCH_QUERY
+
+async def search_query(update: Update, _: CallbackContext):
+    query_text = update.message.text
+    results = await search_google(query_text)
+    await update.message.reply_text("\n\n".join(results), reply_markup=MAIN_MENU)
+    return ConversationHandler.END
+
+# ---------------- MAIN ----------------
+def main():
+    app = ApplicationBuilder().token("7612875405:AAHzHyI3zX2P9KZUHNX-5gJdiM9dZItuX-c").build()
+
+    # Add Task
+    add_task_conv = ConversationHandler(
+        entry_points=[CallbackQueryHandler(add_task_start, pattern="^add_task$")],
+        states={
+            ADD_DATE: [MessageHandler(filters.TEXT & ~filters.COMMAND, add_task_date)],
+            ADD_TEXT: [MessageHandler(filters.TEXT & ~filters.COMMAND, add_task_text)],
+        },
+        fallbacks=[]
     )
 
-    scheduler.add_task(task)
-    persist()
+    # Postpone
+    postpone_conv = ConversationHandler(
+        entry_points=[CallbackQueryHandler(callbacks, pattern="^postpone:")],
+        states={
+            POSTPONE_DATE: [MessageHandler(filters.TEXT & ~filters.COMMAND, postpone_date)]
+        },
+        fallbacks=[]
+    )
 
-    await update.message.reply_text(f"✅ Задача добавлена:\n{format_task(task)}")
+    # Search
+    search_conv = ConversationHandler(
+        entry_points=[CallbackQueryHandler(callbacks, pattern="^search$")],
+        states={
+            SEARCH_QUERY: [MessageHandler(filters.TEXT & ~filters.COMMAND, search_query)]
+        },
+        fallbacks=[]
+    )
 
+    # Handlers
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(add_task_conv)
+    app.add_handler(postpone_conv)
+    app.add_handler(search_conv)
+    app.add_handler(CallbackQueryHandler(callbacks))
 
-async def list_tasks(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id
-    tasks = [item[2] for item in scheduler.tasks_heap if item[2].user_id == user_id]
-
-    if not tasks:
-        await update.message.reply_text("У тебя нет задач.")
-        return
-
-    tasks.sort(key=lambda t: t.scheduled_time)
-    text = "\n\n".join(format_task(t) for t in tasks)
-    await update.message.reply_text(text)
-
-
-async def next_task(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id
-
-    for _, _, task in scheduler.tasks_heap:
-        if task.user_id == user_id:
-            await update.message.reply_text(
-                f"⏭ Следующая задача:\n{format_task(task)}"
-            )
-            return
-
-    await update.message.reply_text("Нет ближайших задач.")
-
-
-# ---------- Фоновый процесс ----------
-async def task_notifier(app):
-    while True:
-        due_tasks = scheduler.check_due_tasks()
-
-        for task in due_tasks:
-            try:
-                await app.bot.send_message(
-                    chat_id=task.user_id,
-                    text=f"⏰ Напоминание:\n{task.title}",
-                    reply_markup=task_action_keyboard(task.id)
-                )
-
-                task.mark_completed()
-
-                if not task.completed:  # повторяющаяся
-                    scheduler.add_task(task)
-
-                persist()
-
-            except Exception as e:
-                print("Ошибка уведомления:", e)
-
-        await asyncio.sleep(5)
-
-
-async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
-
-    parts = query.data.split(":")
-    action = parts[0]
-    task_id = parts[1]
-
-    task = scheduler.find_task_by_id(task_id)
-    if not task:
-        await query.edit_message_text("❌ Задача не найдена")
-        return
-
-    if action == "done":
-        task.mark_completed()
-        persist()
-        await query.edit_message_text(f"✅ Задача выполнена:\n{task.title}")
-        return
-
-    if action == "postpone_menu":
-        await query.edit_message_text(
-            "На сколько отложить?",
-            reply_markup=postpone_keyboard(task_id)
-        )
-        return
-
-    if action == "postpone":
-        delta = parse_time_interval(parts[2])
-        task.postpone(delta)
-        scheduler.add_task(task)
-        persist()
-
-        await query.edit_message_text(
-            f"⏳ Задача отложена:\n{task.title}\nНовая дата: {task.scheduled_time}"
-        )
-
-
-# ---------- Main ----------
-async def main():
-    load_from_storage()
-
-    app = ApplicationBuilder().token("YOUR_TELEGRAM_BOT_TOKEN").build()
-
-    app.add_handler(CommandHandler("add", add_task))
-    app.add_handler(CommandHandler("list", list_tasks))
-    app.add_handler(CommandHandler("next", next_task))
-    app.add_handler(CallbackQueryHandler(handle_callback))
-    asyncio.create_task(task_notifier(app))
-
-    await app.run_polling()
-
+    print("🤖 Бот запущен")
+    app.run_polling()
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    import asyncio
+    asyncio.run(init_db())
+    main()
