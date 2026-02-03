@@ -1,4 +1,4 @@
-from telegram import Update
+from telegram import Update, ReplyKeyboardRemove
 from telegram.ext import (
     ApplicationBuilder,
     CommandHandler,
@@ -8,7 +8,6 @@ from telegram.ext import (
     CallbackContext,
     filters,
 )
-
 from uuid import uuid4
 
 from keyboard import MAIN_MENU, task_actions
@@ -54,11 +53,17 @@ async def add_task_start(update: Update, _: CallbackContext):
 async def add_task_date(update: Update, context: CallbackContext):
     dt = parse_datetime(update.message.text)
     if not dt:
-        await update.message.reply_text("❌ Неверный формат. Попробуй ещё раз.")
+        await update.message.reply_text(
+            "❌ Неверный формат. Попробуй ещё раз.",
+            reply_markup=ReplyKeyboardRemove()
+        )
         return ADD_DATE
 
     context.user_data["task_time"] = dt
-    await update.message.reply_text("Теперь введи текст задачи")
+    await update.message.reply_text(
+        "Теперь введи текст задачи",
+        reply_markup=ReplyKeyboardRemove()
+    )
     return ADD_TEXT
 
 
@@ -81,7 +86,6 @@ async def add_task_text(update: Update, context: CallbackContext):
 async def nearest_task(update: Update, _: CallbackContext):
     user_id = update.effective_user.id
     task = await get_nearest_task(user_id)
-
     query = update.callback_query
 
     if not task:
@@ -93,7 +97,6 @@ async def nearest_task(update: Update, _: CallbackContext):
         return
 
     text = format_task(task)
-
     if query:
         await query.edit_message_text(
             text,
@@ -120,7 +123,6 @@ async def all_tasks(update: Update, _: CallbackContext):
         return
 
     text = "\n\n".join(format_task(t) for t in tasks)
-
     if query:
         await query.edit_message_text(text, reply_markup=MAIN_MENU)
     else:
@@ -150,15 +152,14 @@ async def callbacks(update: Update, context: CallbackContext):
 
         if action == "done":
             await mark_task_done(task_id)
-            await query.edit_message_text(
-                "✅ Задача выполнена",
-                reply_markup=MAIN_MENU
-            )
+            # После выполнения показываем следующую задачу
+            await nearest_task(update, context)
 
         elif action == "postpone":
             context.user_data["task_id"] = task_id
             await query.edit_message_text(
-                "Введи новую дату:\nYYYY-MM-DD HH:MM"
+                "Введи новую дату:\nYYYY-MM-DD HH:MM",
+                reply_markup=ReplyKeyboardRemove()
             )
             return POSTPONE_DATE
 
@@ -174,12 +175,19 @@ async def callbacks(update: Update, context: CallbackContext):
     elif data == "all_tasks":
         await all_tasks(update, context)
 
+
     elif data == "search":
-        await query.edit_message_text("Введите запрос для поиска:")
+        # Убираем ReplyKeyboardRemove
+        await query.edit_message_text(
+            "Введите запрос для поиска:"  # reply_markup не нужен, оставляем кнопки пустыми
+        )
         return SEARCH_QUERY
 
+
     elif data == "weather":
-        await query.edit_message_text("Введите город:")
+        await query.edit_message_text(
+            "Введите город:"  # reply_markup не нужен
+        )
         return WEATHER_CITY
 
     return None
@@ -189,7 +197,10 @@ async def callbacks(update: Update, context: CallbackContext):
 async def postpone_date(update: Update, context: CallbackContext):
     dt = parse_datetime(update.message.text)
     if not dt:
-        await update.message.reply_text("❌ Неверный формат")
+        await update.message.reply_text(
+            "❌ Неверный формат",
+            reply_markup=ReplyKeyboardRemove()
+        )
         return POSTPONE_DATE
 
     await update_task_time(context.user_data["task_id"], dt)
@@ -233,10 +244,12 @@ async def weather_city(update: Update, _: CallbackContext):
 def main():
     app = ApplicationBuilder().token("7612875405:AAHzHyI3zX2P9KZUHNX-5gJdiM9dZItuX-c").build()
 
+    # Команда /start
     app.add_handler(CommandHandler("start", start))
 
+    # ---------------- ADD TASK ----------------
     app.add_handler(ConversationHandler(
-        entry_points=[CallbackQueryHandler(add_task_start, pattern="^add_task$")],
+        entry_points=[CallbackQueryHandler(callbacks, pattern="^add_task$")],
         states={
             ADD_DATE: [MessageHandler(filters.TEXT & ~filters.COMMAND, add_task_date)],
             ADD_TEXT: [MessageHandler(filters.TEXT & ~filters.COMMAND, add_task_text)],
@@ -244,6 +257,7 @@ def main():
         fallbacks=[]
     ))
 
+    # ---------------- POSTPONE ----------------
     app.add_handler(ConversationHandler(
         entry_points=[CallbackQueryHandler(callbacks, pattern="^postpone:")],
         states={
@@ -252,6 +266,7 @@ def main():
         fallbacks=[]
     ))
 
+    # ---------------- SEARCH ----------------
     app.add_handler(ConversationHandler(
         entry_points=[CallbackQueryHandler(callbacks, pattern="^search$")],
         states={
@@ -260,6 +275,7 @@ def main():
         fallbacks=[]
     ))
 
+    # ---------------- WEATHER ----------------
     app.add_handler(ConversationHandler(
         entry_points=[CallbackQueryHandler(callbacks, pattern="^weather$")],
         states={
@@ -268,7 +284,18 @@ def main():
         fallbacks=[]
     ))
 
-    app.add_handler(CallbackQueryHandler(callbacks, pattern="^(menu|nearest_task|all_tasks|add_task|search|weather)$"))
+    # ---------------- CALLBACKS ----------------
+    # Главные кнопки меню и задачи
+    app.add_handler(CallbackQueryHandler(
+        callbacks,
+        pattern="^(menu|nearest_task|all_tasks)$"
+    ))
+
+    # Действия с конкретной задачей: done/postpone
+    app.add_handler(CallbackQueryHandler(
+        callbacks,
+        pattern="^(done|postpone):"
+    ))
 
     print("🤖 Бот запущен")
     app.run_polling()
