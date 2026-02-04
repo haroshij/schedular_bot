@@ -287,8 +287,8 @@ async def weather_city(update: Update, _: CallbackContext):
         text = f"🌤 {city.title()}\n{desc.capitalize()}\n🌡 {round(temp)}°C"
 
     kb = InlineKeyboardMarkup([
-        [InlineKeyboardButton("Выбрать другой город", callback_data="weather_change")],
-        [InlineKeyboardButton("В меню", callback_data="menu")]
+        [InlineKeyboardButton("🔎Выбрать другой город", callback_data="weather_change")],
+        [InlineKeyboardButton("↩️В меню", callback_data="menu")]
     ])
 
     await update.message.reply_text(text, reply_markup=kb)
@@ -315,7 +315,6 @@ def main():
     if not token:
         raise RuntimeError(
             "❌ TELEGRAM_TOKEN не найден! "
-            "Добавь переменную окружения или .env файл."
         )
     app = ApplicationBuilder().token(token).build()
 
