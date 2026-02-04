@@ -1,31 +1,30 @@
 import aiohttp
-from database import set_user_city
-
-API_KEY = "2de2b5931c1e24a55a93626e533d8657"
 
 async def get_weather(city: str) -> dict:
     """
-    Получение погоды через прокси PythonAnywhere.
-    Работает на Free-плане.
+    Получаем погоду через wttr.in (без API ключа, работает на PythonAnywhere Free).
+    Возвращает словарь с ключами 'description' и 'temp' или 'error'.
     """
-    url = "https://api.openweathermap.org/data/2.5/weather"
-    params = {
-        "q": city,
-        "appid": API_KEY,
-        "units": "metric",
-        "lang": "ru"
-    }
+    # wttr.in позволяет возвращать JSON
+    url = f"http://wttr.in/{city}?format=j1"
 
-    proxy = "http://proxy.pythonanywhere.com:3128"  # специальный прокси PA Free
-
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url, params=params, proxy=proxy) as resp:
+    async with aiohttp.ClientSession() as session:
+        try:
+            async with session.get(url) as resp:
                 if resp.status != 200:
                     return {"error": f"Ошибка получения погоды ({resp.status})"}
                 data = await resp.json()
-    except Exception as e:
-        return {"error": f"Не удалось подключиться к API: {e}"}
+        except Exception as e:
+            return {"error": f"Не удалось подключиться к API: {e}"}
 
-    await set_user_city(user_id=None, city=city)
-    return data
+    try:
+        # Берём первый доступный прогноз
+        current = data["current_condition"][0]
+        description = current["weatherDesc"][0]["value"]
+        temp = float(current["temp_C"])
+        return {
+            "weather": [{"description": description}],
+            "main": {"temp": temp}
+        }
+    except Exception as e:
+        return {"error": f"Ошибка обработки данных: {e}"}
