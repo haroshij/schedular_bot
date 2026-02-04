@@ -52,7 +52,7 @@ async def get_nearest_task(user_id: int) -> Optional[Dict]:
             ORDER BY scheduled_time
             LIMIT 1
             """,
-            (user_id, )
+            (user_id,)
         )
         row = await cur.fetchone()
         return dict(row) if row else None
@@ -112,7 +112,7 @@ async def get_user_city(user_id: int) -> Optional[str]:
         return row["city"] if row else None
 
 
-async def set_user_city(user_id: int|None, city: str):
+async def set_user_city(user_id: int | None, city: str):
     async with aiosqlite.connect(DB_NAME) as conn:
         await conn.execute(
             """
@@ -123,3 +123,11 @@ async def set_user_city(user_id: int|None, city: str):
             (user_id, city)
         )
         await conn.commit()
+
+
+async def get_task_by_id(task_id: str) -> dict | None:
+    async with aiosqlite.connect(DB_NAME) as conn:
+        conn.row_factory = aiosqlite.Row
+        cur = await conn.execute("SELECT * FROM tasks WHERE id = ?", (task_id,))
+        row = await cur.fetchone()
+        return dict(row) if row else None

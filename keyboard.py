@@ -1,4 +1,5 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from utils import format_task
 
 # Главное меню (inline)
 MAIN_MENU = InlineKeyboardMarkup([
@@ -27,3 +28,19 @@ def task_actions(task_id: str):
             InlineKeyboardButton("⬅️ В меню", callback_data="menu"),
         ]
     ])
+
+
+def tasks_inline_menu(tasks):
+    """
+    Создаёт InlineKeyboardMarkup с кнопками для всех задач.
+    Каждая кнопка имеет callback_data с task_id.
+    """
+    buttons = []
+    for task in tasks:
+        buttons.append([InlineKeyboardButton(
+            text=format_task(task),
+            callback_data=f"task:{task['id']}"
+        )])
+    # Внизу кнопка "В меню"
+    buttons.append([InlineKeyboardButton("⬅️ В меню", callback_data="menu")])
+    return InlineKeyboardMarkup(buttons)
