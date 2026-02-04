@@ -310,7 +310,12 @@ async def start_postpone(update: Update, context: CallbackContext):
 # ---------------- MAIN ----------------
 def main():
     load_dotenv()  # Загружает переменные из .env
-    token = os.environ["TELEGRAM_TOKEN"]
+    token = os.environ.get("TELEGRAM_TOKEN")
+    if not token:
+        raise RuntimeError(
+            "❌ TELEGRAM_TOKEN не найден! "
+            "Добавь переменную окружения или .env файл."
+        )
     app = ApplicationBuilder().token(token).build()
 
     # ---------- COMMANDS ----------
