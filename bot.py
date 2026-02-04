@@ -311,6 +311,7 @@ async def start_postpone(update: Update, context: CallbackContext):
 def main():
     load_dotenv()  # Загружает переменные из .env
     token = os.environ.get("TELEGRAM_TOKEN")
+    print("TELEGRAM_TOKEN =", token)
     if not token:
         raise RuntimeError(
             "❌ TELEGRAM_TOKEN не найден! "
