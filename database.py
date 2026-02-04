@@ -101,7 +101,7 @@ async def mark_task_done(task_id: str):
 
 
 # ---------- Users ----------
-async def get_user_city(user_id: int) -> Optional[str]:
+async def get_user_city(user_id: int) -> str | None:
     async with aiosqlite.connect(DB_NAME) as conn:
         conn.row_factory = aiosqlite.Row
         cur = await conn.execute(
@@ -112,7 +112,7 @@ async def get_user_city(user_id: int) -> Optional[str]:
         return row["city"] if row else None
 
 
-async def set_user_city(user_id: int | None, city: str):
+async def set_user_city(user_id: int, city: str):
     async with aiosqlite.connect(DB_NAME) as conn:
         await conn.execute(
             """
@@ -123,7 +123,6 @@ async def set_user_city(user_id: int | None, city: str):
             (user_id, city)
         )
         await conn.commit()
-
 
 async def get_task_by_id(task_id: str) -> dict | None:
     async with aiosqlite.connect(DB_NAME) as conn:

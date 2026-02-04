@@ -1,6 +1,9 @@
+import os
 import time
 
-from telegram import Update, ReplyKeyboardRemove
+from dotenv import load_dotenv
+
+from telegram import Update, ReplyKeyboardRemove, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     ApplicationBuilder,
     CommandHandler,
@@ -27,7 +30,9 @@ from database import (
     get_all_tasks,
     update_task_time,
     mark_task_done,
-    get_task_by_id
+    get_task_by_id,
+    get_user_city,
+    set_user_city
 )
 from utils import parse_datetime, format_task
 from handlers.search import search_duckduckgo
@@ -181,7 +186,6 @@ async def callbacks(update: Update, context: CallbackContext):
 
         if action == "done":
             await mark_task_done(task_id)
-            # сразу возвращаемся к списку задач
             await all_tasks(update, context)
             return None
 
@@ -201,9 +205,32 @@ async def callbacks(update: Update, context: CallbackContext):
 
     # ================== ПОГОДА ==================
     if data == "weather":
-        await query.edit_message_text(
-            "Введите город:"
-        )
+        user_id = update.effective_user.id
+        city = await get_user_city(user_id)
+
+        if city:
+            # Город сохранён, показываем погоду + кнопка смены
+            weather_data = await get_weather(city)
+            if "error" in weather_data:
+                text = f"Ошибка получения погоды для города {city}\n{weather_data['error']}"
+            else:
+                desc = weather_data["weather"][0]["description"]
+                temp = weather_data["main"]["temp"]
+                text = f"🌤 {city.title()}\n{desc.capitalize()}\n🌡 {round(temp)}°C"
+
+            kb = InlineKeyboardMarkup([
+                [InlineKeyboardButton("Выбрать другой город", callback_data="weather_change")],
+                [InlineKeyboardButton("В меню", callback_data="menu")]
+            ])
+            await query.edit_message_text(text, reply_markup=kb)
+            return None
+        else:
+            # Города нет, просим ввести
+            await query.edit_message_text("Введите город:")
+            return WEATHER_CITY
+
+    if data == "weather_change":
+        await query.edit_message_text("Введите новый город:")
         return WEATHER_CITY
 
     # ================== ДОБАВИТЬ ЗАДАЧУ ==================
@@ -249,6 +276,7 @@ async def search_query(update: Update, _: CallbackContext):
 # ---------------- WEATHER ----------------
 async def weather_city(update: Update, _: CallbackContext):
     city = update.message.text.strip()
+    await set_user_city(update.effective_user.id, city)
     data = await get_weather(city)
 
     if "error" in data:
@@ -256,9 +284,14 @@ async def weather_city(update: Update, _: CallbackContext):
     else:
         desc = data["weather"][0]["description"]
         temp = data["main"]["temp"]
-        text = f"🌤 {city.title()}\n{str(desc).capitalize()}\n🌡 {round(temp)}°C"
+        text = f"🌤 {city.title()}\n{desc.capitalize()}\n🌡 {round(temp)}°C"
 
-    await update.message.reply_text(text, reply_markup=MAIN_MENU)
+    kb = InlineKeyboardMarkup([
+        [InlineKeyboardButton("Выбрать другой город", callback_data="weather_change")],
+        [InlineKeyboardButton("В меню", callback_data="menu")]
+    ])
+
+    await update.message.reply_text(text, reply_markup=kb)
     return ConversationHandler.END
 
 async def start_postpone(update: Update, context: CallbackContext):
@@ -276,8 +309,11 @@ async def start_postpone(update: Update, context: CallbackContext):
 
 # ---------------- MAIN ----------------
 def main():
-    app = ApplicationBuilder().token('7612875405:AAHzHyI3zX2P9KZUHNX-5gJdiM9dZItuX-c').build()
+    load_dotenv()  # Загружает переменные из .env
+    token = os.environ["TELEGRAM_TOKEN"]
+    app = ApplicationBuilder().token(token).build()
 
+    # ---------- COMMANDS ----------
     app.add_handler(CommandHandler("start", start))
 
     # ---------- ADD TASK ----------
@@ -301,7 +337,7 @@ def main():
         fallbacks=[]
     ))
 
-    # ---------- SEARCH (ВОТ ОН) ----------
+    # ---------- SEARCH ----------
     app.add_handler(ConversationHandler(
         entry_points=[CallbackQueryHandler(callbacks, pattern="^search$")],
         states={
@@ -314,17 +350,19 @@ def main():
 
     # ---------- WEATHER ----------
     app.add_handler(ConversationHandler(
-        entry_points=[CallbackQueryHandler(callbacks, pattern="^weather$")],
+        entry_points=[
+            CallbackQueryHandler(callbacks, pattern="^weather$"),
+            CallbackQueryHandler(callbacks, pattern="^weather_change$")
+        ],
         states={
-            WEATHER_CITY: [
-                MessageHandler(filters.TEXT & ~filters.COMMAND, weather_city)
-            ]
+            WEATHER_CITY: [MessageHandler(filters.TEXT & ~filters.COMMAND, weather_city)],
         },
         fallbacks=[]
     ))
 
-    # ---------- CALLBACKS (ПОСЛЕДНИЙ) ----------
+    # ---------- CALLBACKS (для задач, меню и действий) ----------
     app.add_handler(CallbackQueryHandler(callbacks))
+
     app.run_polling()
 
 
