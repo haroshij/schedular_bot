@@ -82,14 +82,20 @@ def parse_datetime(text: str):
     if text.startswith("сегодня"):
         time_part = text.replace("сегодня", "").strip()
         hour, minute = map(int, time_part.split(":"))
-        return now.replace(hour=hour, minute=minute, second=0, microsecond=0)
+        try:
+            return now.replace(hour=hour, minute=minute, second=0, microsecond=0)
+        except ValueError:
+            pass
 
     if text.startswith("завтра"):
         time_part = text.replace("завтра", "").strip()
         hour, minute = map(int, time_part.split(":"))
-        return (now + timedelta(days=1)).replace(
+        try:
+            return (now + timedelta(days=1)).replace(
             hour=hour, minute=minute, second=0, microsecond=0
         )
+        except ValueError:
+            pass
 
     return None
 
