@@ -122,35 +122,40 @@ async def add_task_date(update: Update, context: CallbackContext):
 
 async def add_task_text(update: Update, context: CallbackContext):
     task_id = str(uuid4())
+    user_id = update.effective_user.id
+    title = update.message.text
+    scheduled_time = context.user_data["task_time"]
 
+    # 1️⃣ Сохраняем задачу в БД
     await add_task(
         task_id=task_id,
-        user_id=update.effective_user.id,
-        title=update.message.text,
-        scheduled_time=context.user_data["task_time"]
+        user_id=user_id,
+        title=title,
+        scheduled_time=scheduled_time
     )
 
-    task = {
-        "id": task_id,
-        "user_id": update.effective_user.id,
-        "title": update.message.text,
-        "scheduled_time": context.user_data["task_time"]
-    }
+    # 2️⃣ Получаем актуальные данные задачи из БД
+    task = await get_task_by_id(task_id)
 
-    task_time: datetime = task["scheduled_time"]  # подсказка для IDE
-    now = datetime.now(timezone.utc)
-    delay: float = (task_time - now).total_seconds()
-    if delay < 0:
-        delay = 0
+    if task and task.get("status") == "pending":
+        # 3️⃣ Вычисляем задержку
+        delay = (task["scheduled_time"] - datetime.now(timezone.utc)).total_seconds()
+        if delay < 0:
+            delay = 0
 
-    context.application.job_queue.run_once(
-        send_task_reminder,
-        delay,
-        data=task,
-        name=f"task_{task['id']}"
-    )
+        # 4️⃣ Ставим job
+        context.application.job_queue.run_once(
+            send_task_reminder,
+            delay,
+            data=task,
+            name=f"task_{task['id']}"
+        )
 
+    # 5️⃣ Сообщаем пользователю
     await update.message.reply_text("✅ Задача добавлена", reply_markup=MAIN_MENU)
+
+    # 6️⃣ Чистим контекст
+    context.user_data.clear()
     return ConversationHandler.END
 
 
