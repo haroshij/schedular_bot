@@ -138,3 +138,25 @@ async def set_user_city(user_id: int, city: str):
             """,
             user_id, city
         )
+
+
+async def get_future_tasks() -> list[dict]:
+    async with pool.acquire() as conn:
+        rows = await conn.fetch(
+            """
+            SELECT *
+            FROM tasks
+            WHERE status = 'pending'  -- берем только невыполненные
+              AND scheduled_time > CURRENT_TIMESTAMP
+            """
+        )
+        return [dict(r) for r in rows]
+
+
+# Возвращает все pending задачи для всех пользователей
+async def get_all_pending_tasks() -> list[dict]:
+    async with pool.acquire() as conn:
+        rows = await conn.fetch(
+            "SELECT * FROM tasks WHERE status='pending'"
+        )
+        return [dict(r) for r in rows]

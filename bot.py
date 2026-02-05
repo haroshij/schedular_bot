@@ -24,7 +24,7 @@ from database import (
     get_nearest_task,
     get_all_tasks,
     get_task_by_id,
-    mark_task_done
+    mark_task_done, get_all_pending_tasks
 )
 from utils import parse_datetime, format_task, translate_weather
 from handlers.search import search_duckduckgo
@@ -33,6 +33,20 @@ from keyboard import MAIN_MENU, task_actions, tasks_inline_menu
 from states import ADD_DATE, ADD_TEXT, POSTPONE_DATE, SEARCH_QUERY, WEATHER_CITY
 
 USER_TZ = timezone(timedelta(hours=3))
+
+
+async def send_task_reminder(context: CallbackContext):
+    task: object | dict = context.job.data  # явно говорим, что это dict
+    if not task:
+        return  # safety
+
+    text = f"⏰ Напоминание!\n\n{format_task(task)}"
+
+    await context.bot.send_message(
+        chat_id=task["user_id"],
+        text=text,
+        reply_markup=task_actions(task["id"])
+    )
 
 
 # ---------------- START ----------------
@@ -76,17 +90,40 @@ async def add_task_date(update: Update, context: CallbackContext):
         reply_markup=InlineKeyboardMarkup(
             [[InlineKeyboardButton("❌ Отмена", callback_data="cancel")],
              [InlineKeyboardButton("↩️ В меню", callback_data="menu")]])
-                                    )
+    )
     return ADD_TEXT
 
 
 async def add_task_text(update: Update, context: CallbackContext):
+    task_id = str(uuid4())
+
     await add_task(
-        task_id=str(uuid4()),
+        task_id=task_id,
         user_id=update.effective_user.id,
         title=update.message.text,
         scheduled_time=context.user_data["task_time"]
     )
+
+    task = {
+        "id": task_id,
+        "user_id": update.effective_user.id,
+        "title": update.message.text,
+        "scheduled_time": context.user_data["task_time"]
+    }
+
+    task_time: datetime = task["scheduled_time"]  # подсказка для IDE
+    now = datetime.now(timezone.utc)
+    delay: float = (task_time - now).total_seconds()
+    if delay < 0:
+        delay = 0
+
+    context.application.job_queue.run_once(
+        send_task_reminder,
+        delay,
+        data=task,
+        name=f"task_{task['id']}"
+    )
+
     await update.message.reply_text("✅ Задача добавлена", reply_markup=MAIN_MENU)
     return ConversationHandler.END
 
@@ -100,7 +137,7 @@ async def postpone_date(update: Update, context: CallbackContext):
             "Примеры:\n• 2026-02-10 18:30\n"
             "• сегодня 21:00\n"
             "• завтра 9:00",
-            reply_markup = InlineKeyboardMarkup(
+            reply_markup=InlineKeyboardMarkup(
                 [[InlineKeyboardButton("❌ Отмена", callback_data="cancel")],
                  [InlineKeyboardButton("↩️ В меню", callback_data="menu")]])
         )
@@ -122,6 +159,24 @@ async def postpone_date(update: Update, context: CallbackContext):
         return POSTPONE_DATE
 
     await update_task_time(context.user_data["task_id"], dt_utc)
+
+    # удалить старый job
+    for job in context.application.job_queue.jobs():
+        if job.name == f"task_{context.user_data['task_id']}":
+            job.schedule_removal()
+
+    # создать новый
+    task = await get_task_by_id(context.user_data["task_id"])
+
+    delay = (task["scheduled_time"] - datetime.now(timezone.utc)).total_seconds()
+
+    context.application.job_queue.run_once(
+        send_task_reminder,
+        delay,
+        data=task,
+        name=f"task_{task['id']}"
+    )
+
     await update.message.reply_text("⏳ Время изменено", reply_markup=MAIN_MENU)
     return ConversationHandler.END
 
@@ -168,7 +223,7 @@ async def callbacks(update: Update, context: CallbackContext):
     try:
         # --- MENU ---
         if data == "menu":
-            if query.message and query.message.text != "Выбери действие 👇":
+            if getattr(query.message, "text", None) != "Выбери действие 👇":
                 await query.edit_message_text("Выбери действие 👇", reply_markup=MAIN_MENU)
             return None
 
@@ -176,13 +231,13 @@ async def callbacks(update: Update, context: CallbackContext):
         if data == "add_task":
             await query.edit_message_text(
                 ("Введите дату и время ⏰\n\n"
-                "Примеры:\n• 2026-02-10 18:30\n"
-                "• сегодня 21:00\n"
-                "• завтра 9:00"),
-            reply_markup = InlineKeyboardMarkup(
-                [[InlineKeyboardButton("❌ Отмена", callback_data="cancel")],
-                [InlineKeyboardButton("↩️ В меню", callback_data="menu")]
-            ])
+                 "Примеры:\n• 2026-02-10 18:30\n"
+                 "• сегодня 21:00\n"
+                 "• завтра 9:00"),
+                reply_markup=InlineKeyboardMarkup(
+                    [[InlineKeyboardButton("❌ Отмена", callback_data="cancel")],
+                     [InlineKeyboardButton("↩️ В меню", callback_data="menu")]
+                     ])
             )
             return ADD_DATE
 
@@ -194,7 +249,7 @@ async def callbacks(update: Update, context: CallbackContext):
                 "Примеры:\n• 2026-02-10 18:30\n"
                 "• сегодня 21:00\n"
                 "• завтра 9:00",
-                reply_markup = InlineKeyboardMarkup(
+                reply_markup=InlineKeyboardMarkup(
                     [[InlineKeyboardButton("❌ Отмена", callback_data="cancel")],
                      [InlineKeyboardButton("↩️ В меню", callback_data="menu")]])
             )
@@ -229,7 +284,7 @@ async def callbacks(update: Update, context: CallbackContext):
                     [InlineKeyboardButton("Выбрать другой город", callback_data="weather_change")],
                     [InlineKeyboardButton("↩️ В меню", callback_data="menu")]
                 ])
-                if query.message and query.message.text != text:
+                if getattr(query.message, "text", None) != text:
                     await query.edit_message_text(text, reply_markup=kb)
                 return None
             else:
@@ -250,7 +305,7 @@ async def callbacks(update: Update, context: CallbackContext):
             else:
                 text = "Нет задач"
                 kb = MAIN_MENU
-            if query.message and query.message.text != text:
+            if getattr(query.message, "text", None) != text:
                 await query.edit_message_text(text, reply_markup=kb)
             return None
 
@@ -276,7 +331,7 @@ async def callbacks(update: Update, context: CallbackContext):
             else:
                 text = "Нет задач"
                 kb = MAIN_MENU
-            if query.message and query.message.text != text:
+            if getattr(query.message, "text", None) != text:
                 await query.edit_message_text(text, reply_markup=kb)
             return None
 
@@ -290,7 +345,7 @@ async def callbacks(update: Update, context: CallbackContext):
             else:
                 text = "Задача не найдена"
                 kb = MAIN_MENU
-            if query.message and query.message.text != text:
+            if getattr(query.message, "text", None) != text:
                 await query.edit_message_text(text, reply_markup=kb)
             return None
 
@@ -298,6 +353,30 @@ async def callbacks(update: Update, context: CallbackContext):
         print(f"Ошибка в callbacks: {e}")
 
     return None
+
+
+async def restore_jobs(app):
+    now = datetime.now(timezone.utc)
+
+    # нужна функция в БД
+    tasks = await get_all_pending_tasks()
+
+    for task in tasks:
+        if task.get("done"):
+            continue
+
+        run_at = task["scheduled_time"]
+        if run_at <= now:
+            continue
+
+        delay = (run_at - now).total_seconds()
+
+        app.job_queue.run_once(
+            send_task_reminder,
+            delay,
+            data=task,
+            name=f"task_{task['id']}"
+        )
 
 
 # ---------------- MAIN ----------------
@@ -308,6 +387,7 @@ def main():
 
     async def on_startup(_):
         await init_db()
+        await restore_jobs(app)
 
     async def on_shutdown(_):
         await close_db()
