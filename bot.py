@@ -20,17 +20,20 @@ from database import (
     add_task,
     update_task_time,
     get_user_city,
-    set_user_city
+    set_user_city,
+    get_nearest_task,
+    get_all_tasks
 )
-from utils import parse_datetime
+from utils import parse_datetime, format_task
 from handlers.search import search_duckduckgo
 from handlers.weather import get_weather
-from keyboard import MAIN_MENU
+from keyboard import MAIN_MENU, task_actions, tasks_inline_menu
 from states import ADD_DATE, ADD_TEXT, POSTPONE_DATE, SEARCH_QUERY, WEATHER_CITY
 
 # ================== Настройки ==================
 # Считаем, что пользователь вводит время в МСК
 USER_TZ = timezone(timedelta(hours=3))
+
 
 # ---------------- START ----------------
 async def start(update: Update, _: CallbackContext):
@@ -39,6 +42,7 @@ async def start(update: Update, _: CallbackContext):
         reply_markup=MAIN_MENU
     )
 
+
 # ---------------- ADD TASK ----------------
 async def add_task_date(update: Update, context: CallbackContext):
     dt = parse_datetime(update.message.text)
@@ -46,7 +50,6 @@ async def add_task_date(update: Update, context: CallbackContext):
         await update.message.reply_text("❌ Неверный формат. Попробуй ещё раз")
         return ADD_DATE
 
-    # Считаем, что пользователь ввёл время в МСК
     dt_local = dt.replace(tzinfo=USER_TZ)
     dt_utc = dt_local.astimezone(timezone.utc)
 
@@ -58,6 +61,7 @@ async def add_task_date(update: Update, context: CallbackContext):
     await update.message.reply_text("Теперь введи текст задачи")
     return ADD_TEXT
 
+
 async def add_task_text(update: Update, context: CallbackContext):
     await add_task(
         task_id=str(uuid4()),
@@ -68,6 +72,7 @@ async def add_task_text(update: Update, context: CallbackContext):
 
     await update.message.reply_text("✅ Задача добавлена", reply_markup=MAIN_MENU)
     return ConversationHandler.END
+
 
 # ---------------- POSTPONE ----------------
 async def postpone_date(update: Update, context: CallbackContext):
@@ -87,6 +92,7 @@ async def postpone_date(update: Update, context: CallbackContext):
     await update.message.reply_text("⏳ Время изменено", reply_markup=MAIN_MENU)
     return ConversationHandler.END
 
+
 # ---------------- SEARCH ----------------
 async def search_query(update: Update, _: CallbackContext):
     query_text = update.message.text
@@ -94,6 +100,7 @@ async def search_query(update: Update, _: CallbackContext):
 
     await update.message.reply_text("\n\n".join(results), reply_markup=MAIN_MENU)
     return ConversationHandler.END
+
 
 # ---------------- WEATHER ----------------
 async def weather_city(update: Update, _: CallbackContext):
@@ -115,6 +122,7 @@ async def weather_city(update: Update, _: CallbackContext):
     await update.message.reply_text(text, reply_markup=kb)
     return ConversationHandler.END
 
+
 # ---------------- CALLBACKS ----------------
 async def callbacks(update: Update, context: CallbackContext):
     query = update.callback_query
@@ -129,20 +137,24 @@ async def callbacks(update: Update, context: CallbackContext):
         await query.edit_message_text("Выбери действие 👇", reply_markup=MAIN_MENU)
         return None
 
+    # --- ADD TASK ---
     if data == "add_task":
         await query.edit_message_text("Введи дату и время:\nYYYY-MM-DD HH:MM")
         return ADD_DATE
 
+    # --- POSTPONE ---
     if data.startswith("postpone:"):
         task_id = data.split(":", 1)[1]
         context.user_data["task_id"] = task_id
         await query.edit_message_text("Введи новую дату:\nYYYY-MM-DD HH:MM")
         return POSTPONE_DATE
 
+    # --- SEARCH ---
     if data == "search":
         await query.edit_message_text("Введите запрос для поиска:")
         return SEARCH_QUERY
 
+    # --- WEATHER ---
     if data == "weather":
         user_id = update.effective_user.id
         city = await get_user_city(user_id)
@@ -169,15 +181,37 @@ async def callbacks(update: Update, context: CallbackContext):
         await query.edit_message_text("Введите новый город:")
         return WEATHER_CITY
 
+    # --- NEAREST TASK ---
+    if data == "nearest_task":
+        task = await get_nearest_task(update.effective_user.id)
+        if task:
+            await query.edit_message_text(format_task(task), reply_markup=task_actions(task["id"]))
+        else:
+            await query.edit_message_text("Нет задач", reply_markup=MAIN_MENU)
+        return None
+
+    # --- ALL TASKS ---
+    if data == "all_tasks":
+        tasks = await get_all_tasks(update.effective_user.id)
+        if tasks:
+            await query.edit_message_text("Выбери задачу:", reply_markup=tasks_inline_menu(tasks))
+        else:
+            await query.edit_message_text("Нет задач", reply_markup=MAIN_MENU)
+        return None
+
     return None
 
+
 # ---------------- MAIN ----------------
-def main():
+async def main():
     token = os.getenv("TELEGRAM_TOKEN")
     if not token:
         raise RuntimeError("❌ TELEGRAM_TOKEN не найден")
 
     app = ApplicationBuilder().token(token).build()
+
+    # --- Инициализация БД в том же loop ---
+    await init_db()
 
     # --- COMMANDS ---
     app.add_handler(CommandHandler("start", start))
@@ -226,22 +260,14 @@ def main():
     app.add_handler(CallbackQueryHandler(callbacks))
 
     # --- START BOT ---
-    app.run_polling()
+    await app.run_polling()
+
 
 # ---------------- ENTRYPOINT ----------------
 if __name__ == "__main__":
     load_dotenv()
-
-    # Инициализация БД асинхронно
     try:
-        asyncio.run(init_db())
-    except Exception as e:
-        print("Ошибка инициализации базы данных:", e)
-        raise
-
-    # Запуск бота синхронно
-    try:
-        main()
+        asyncio.run(main())
     except KeyboardInterrupt:
         print("Бот остановлен вручную")
     except Exception as e:
