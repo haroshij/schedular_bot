@@ -1,42 +1,40 @@
 import os
 import asyncpg
+from dotenv import load_dotenv
 from datetime import datetime
 from typing import Optional, List, Dict
-from dotenv import load_dotenv
 
-# Загружаем .env локально
-load_dotenv()
+load_dotenv()  # Загружаем .env сразу
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
-    raise RuntimeError("DATABASE_URL не найден в переменных окружения")
+    raise RuntimeError("DATABASE_URL is not set")
 
-# Пул соединений
+# Глобальный пул подключений к БД
 pool: Optional[asyncpg.pool.Pool] = None
 
-# ================== ИНИЦИАЛИЗАЦИЯ ==================
+
+# ---------- Init ----------
 async def init_db() -> None:
     global pool
-    pool: asyncpg.pool.Pool
     pool = await asyncpg.create_pool(DATABASE_URL)
 
     async with pool.acquire() as conn:
-        # Создаем таблицу задач
         await conn.execute("""
-            CREATE TABLE IF NOT EXISTS tasks (
-                id TEXT PRIMARY KEY,
-                user_id BIGINT NOT NULL,
-                title TEXT NOT NULL,
-                scheduled_time TIMESTAMPTZ NOT NULL,
-                status TEXT NOT NULL
-            )
+        CREATE TABLE IF NOT EXISTS tasks (
+            id TEXT PRIMARY KEY,
+            user_id BIGINT NOT NULL,
+            title TEXT NOT NULL,
+            scheduled_time TIMESTAMPTZ NOT NULL,
+            status TEXT NOT NULL
+        )
         """)
-        # Создаем таблицу пользователей
+
         await conn.execute("""
-            CREATE TABLE IF NOT EXISTS users (
-                user_id BIGINT PRIMARY KEY,
-                city TEXT
-            )
+        CREATE TABLE IF NOT EXISTS users (
+            user_id BIGINT PRIMARY KEY,
+            city TEXT
+        )
         """)
 
 # ================== ЗАДАЧИ ==================
