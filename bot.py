@@ -158,17 +158,24 @@ async def callbacks(update: Update, context: CallbackContext):
         # --- ADD TASK ---
         if data == "add_task":
             await query.edit_message_text(
-                "Введите дату и время ⏰\n\n"
+                ("Введите дату и время ⏰\n\n"
                 "Примеры:\n• 2026-02-10 18:30\n"
                 "• сегодня 21:00\n"
-                "• завтра 9:00"
+                "• завтра 9:00"),
+            reply_markup = InlineKeyboardMarkup(
+                [[InlineKeyboardButton("❌ Отмена", callback_data="cancel")]])
             )
             return ADD_DATE
 
         if data.startswith("postpone:"):
             task_id = data.split(":", 1)[1]
             context.user_data["task_id"] = task_id
-            await query.edit_message_text("Введи новую дату:\nYYYY-MM-DD HH:MM")
+            await query.edit_message_text(
+                "Введите дату и время ⏰\n\n"
+                "Примеры:\n• 2026-02-10 18:30\n"
+                "• сегодня 21:00\n"
+                "• завтра 9:00"
+            )
             return POSTPONE_DATE
 
         # --- SEARCH ---
@@ -284,15 +291,41 @@ def main():
     # COMMANDS
     app.add_handler(CommandHandler("start", start))
 
+    # ---------------- CANCEL ----------------
+    async def cancel(update: Update, context: CallbackContext):
+        if update.callback_query:
+            await update.callback_query.answer()
+            await update.callback_query.edit_message_text(
+                "Действие отменено 👍",
+                reply_markup=MAIN_MENU
+            )
+        else:
+            await update.message.reply_text(
+                "Действие отменено 👍",
+                reply_markup=MAIN_MENU
+            )
+
+        context.user_data.clear()
+        return ConversationHandler.END
+
     # ADD TASK
     app.add_handler(
         ConversationHandler(
             entry_points=[CallbackQueryHandler(callbacks, pattern="^add_task$")],
             states={
-                ADD_DATE: [MessageHandler(filters.TEXT & ~filters.COMMAND, add_task_date)],
-                ADD_TEXT: [MessageHandler(filters.TEXT & ~filters.COMMAND, add_task_text)],
+                ADD_DATE: [
+                    MessageHandler(filters.TEXT & ~filters.COMMAND, add_task_date),
+                    CallbackQueryHandler(cancel, pattern="^cancel$")
+                ],
+                ADD_TEXT: [
+                    MessageHandler(filters.TEXT & ~filters.COMMAND, add_task_text),
+                    CallbackQueryHandler(cancel, pattern="^cancel$")
+                ],
             },
-            fallbacks=[],
+            fallbacks=[
+                CommandHandler("cancel", cancel),
+                CallbackQueryHandler(cancel, pattern="^menu$")
+            ],
         )
     )
 
