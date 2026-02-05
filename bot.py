@@ -1,6 +1,8 @@
 import os
 import time
 
+from datetime import datetime
+
 from dotenv import load_dotenv
 
 from telegram import Update, ReplyKeyboardRemove, InlineKeyboardButton, InlineKeyboardMarkup
@@ -252,6 +254,13 @@ async def postpone_date(update: Update, context: CallbackContext):
         )
         return POSTPONE_DATE
 
+    elif dt < datetime.now():
+        await update.message.reply_text(
+            "❌ Нельзя вводить прошедшую дату",
+            reply_markup=ReplyKeyboardRemove()
+        )
+        return POSTPONE_DATE
+
     await update_task_time(context.user_data["task_id"], dt)
 
     await update.message.reply_text(
@@ -311,7 +320,6 @@ async def start_postpone(update: Update, context: CallbackContext):
 def main():
     load_dotenv()  # Загружает переменные из .env
     token = os.environ.get("TELEGRAM_TOKEN")
-    print("TELEGRAM_TOKEN =", token)
     if not token:
         raise RuntimeError(
             "❌ TELEGRAM_TOKEN не найден! "
