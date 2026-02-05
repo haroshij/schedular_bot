@@ -23,6 +23,10 @@ def task_actions(task_id: str) -> InlineKeyboardMarkup:
 def tasks_inline_menu(tasks: list) -> InlineKeyboardMarkup:
     kb = []
     for t in tasks:
-        text = f"  {t['title']}   ⏰ {format_task_date(t['scheduled_time'])}  "
+        if len(t['title']) > 19:
+            title = f"{t['title'][:15]}..."
+        else:
+            title = t['title']
+        text = f"  {title}   ⏰ {format_task_date(t['scheduled_time'])}  "
         kb.append([InlineKeyboardButton(text, callback_data=f"task:{t['id']}")])
     return InlineKeyboardMarkup(kb)
