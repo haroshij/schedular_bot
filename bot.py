@@ -24,7 +24,7 @@ from database import (
     get_nearest_task,
     get_all_tasks,
     get_task_by_id,
-    mark_task_done, get_all_pending_tasks
+    mark_task_done
 )
 from utils import parse_datetime, format_task, translate_weather
 from handlers.search import search_duckduckgo
@@ -35,18 +35,44 @@ from states import ADD_DATE, ADD_TEXT, POSTPONE_DATE, SEARCH_QUERY, WEATHER_CITY
 USER_TZ = timezone(timedelta(hours=3))
 
 
+# ---------------- REMINDERS ----------------
 async def send_task_reminder(context: CallbackContext):
-    task: object | dict = context.job.data  # явно говорим, что это dict
-    if not task:
-        return  # safety
+    """Отправляет напоминание о задаче, только если она ещё pending."""
+    task: dict | object = context.job.data
 
-    text = f"⏰ Напоминание!\n\n{format_task(task)}"
+    # Получаем актуальные данные из БД
+    from database import get_task_by_id
+    task_db = await get_task_by_id(task["id"])
+    if not task_db or task_db.get("status") != "pending":
+        # Задача выполнена или удалена — ничего не делаем
+        return
+
+    text = f"⏰ Напоминание!\n\n{format_task(task_db)}"
 
     await context.bot.send_message(
-        chat_id=task["user_id"],
+        chat_id=task_db["user_id"],
         text=text,
-        reply_markup=task_actions(task["id"])
+        reply_markup=task_actions(task_db["id"])
     )
+
+
+async def restore_jobs(app):
+    """Восстанавливает задачи при старте бота."""
+    now = datetime.now(timezone.utc)
+
+    # Берём только pending задачи с временем в будущем
+    from database import get_all_pending_tasks
+    tasks = await get_all_pending_tasks()
+    tasks = [t for t in tasks if t.get("status") == "pending" and t["scheduled_time"] > now]
+
+    for task in tasks:
+        delay = (task["scheduled_time"] - now).total_seconds()
+        app.job_queue.run_once(
+            send_task_reminder,
+            delay,
+            data=task,
+            name=f"task_{task['id']}"
+        )
 
 
 # ---------------- START ----------------
@@ -139,7 +165,7 @@ async def postpone_date(update: Update, context: CallbackContext):
             "• завтра 9:00",
             reply_markup=InlineKeyboardMarkup(
                 [[InlineKeyboardButton("❌ Отмена", callback_data="cancel")],
-                 [InlineKeyboardButton("↩️ В меню", callback_data="menu")]])
+                 [InlineKeyboardButton("↩️ В меню", callback_data="menu")]]),
         )
         return POSTPONE_DATE
 
@@ -154,28 +180,35 @@ async def postpone_date(update: Update, context: CallbackContext):
             "• завтра 9:00",
             reply_markup=InlineKeyboardMarkup(
                 [[InlineKeyboardButton("❌ Отмена", callback_data="cancel")],
-                 [InlineKeyboardButton("↩️ В меню", callback_data="menu")]])
+                 [InlineKeyboardButton("↩️ В меню", callback_data="menu")]]),
         )
         return POSTPONE_DATE
 
-    await update_task_time(context.user_data["task_id"], dt_utc)
+    task_id = context.user_data["task_id"]
 
-    # удалить старый job
+    # ---------------- Обновляем время задачи в БД ----------------
+    await update_task_time(task_id, dt_utc)
+
+    # ---------------- Удаляем старый job ----------------
     for job in context.application.job_queue.jobs():
-        if job.name == f"task_{context.user_data['task_id']}":
+        if job.name == f"task_{task_id}":
             job.schedule_removal()
 
-    # создать новый
-    task = await get_task_by_id(context.user_data["task_id"])
+    # ---------------- Получаем актуальные данные задачи ----------------
+    task = await get_task_by_id(task_id)
 
-    delay = (task["scheduled_time"] - datetime.now(timezone.utc)).total_seconds()
+    # Проверяем статус задачи — только pending
+    if task and task.get("status") == "pending":
+        delay = (task["scheduled_time"] - datetime.now(timezone.utc)).total_seconds()
+        if delay < 0:
+            delay = 0
 
-    context.application.job_queue.run_once(
-        send_task_reminder,
-        delay,
-        data=task,
-        name=f"task_{task['id']}"
-    )
+        context.application.job_queue.run_once(
+            send_task_reminder,
+            delay,
+            data=task,
+            name=f"task_{task['id']}"
+        )
 
     await update.message.reply_text("⏳ Время изменено", reply_markup=MAIN_MENU)
     return ConversationHandler.END
@@ -353,30 +386,6 @@ async def callbacks(update: Update, context: CallbackContext):
         print(f"Ошибка в callbacks: {e}")
 
     return None
-
-
-async def restore_jobs(app):
-    now = datetime.now(timezone.utc)
-
-    # нужна функция в БД
-    tasks = await get_all_pending_tasks()
-
-    for task in tasks:
-        if task.get("done"):
-            continue
-
-        run_at = task["scheduled_time"]
-        if run_at <= now:
-            continue
-
-        delay = (run_at - now).total_seconds()
-
-        app.job_queue.run_once(
-            send_task_reminder,
-            delay,
-            data=task,
-            name=f"task_{task['id']}"
-        )
 
 
 # ---------------- MAIN ----------------
