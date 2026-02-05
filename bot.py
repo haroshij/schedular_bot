@@ -65,7 +65,12 @@ async def add_task_date(update: Update, context: CallbackContext):
         return ADD_DATE
 
     context.user_data["task_time"] = dt_utc
-    await update.message.reply_text("Теперь введи текст задачи")
+    await update.message.reply_text(
+        "Теперь введи текст задачи",
+        reply_markup=InlineKeyboardMarkup(
+            [[InlineKeyboardButton("❌ Отмена", callback_data="cancel")],
+             [InlineKeyboardButton("↩️ В меню", callback_data="menu")]])
+                                    )
     return ADD_TEXT
 
 
@@ -163,7 +168,9 @@ async def callbacks(update: Update, context: CallbackContext):
                 "• сегодня 21:00\n"
                 "• завтра 9:00"),
             reply_markup = InlineKeyboardMarkup(
-                [[InlineKeyboardButton("❌ Отмена", callback_data="cancel")]])
+                [[InlineKeyboardButton("❌ Отмена", callback_data="cancel")],
+                [InlineKeyboardButton("↩️ В меню", callback_data="menu")]
+            ])
             )
             return ADD_DATE
 
@@ -180,7 +187,12 @@ async def callbacks(update: Update, context: CallbackContext):
 
         # --- SEARCH ---
         if data == "search":
-            await query.edit_message_text("Введите запрос для поиска:")
+            await query.edit_message_text(
+                "Введите запрос для поиска:",
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton("↩️ В меню", callback_data="menu")]
+                ])
+            )
             return SEARCH_QUERY
 
         # --- WEATHER ---
@@ -206,7 +218,12 @@ async def callbacks(update: Update, context: CallbackContext):
                     await query.edit_message_text(text, reply_markup=kb)
                 return None
             else:
-                await query.edit_message_text("Введите город:")
+                await query.edit_message_text(
+                    "Введите город:",
+                    reply_markup=InlineKeyboardMarkup([
+                        [InlineKeyboardButton("↩️ В меню", callback_data="menu")]
+                    ])
+                )
                 return WEATHER_CITY
 
         # --- NEAREST TASK ---
@@ -296,12 +313,12 @@ def main():
         if update.callback_query:
             await update.callback_query.answer()
             await update.callback_query.edit_message_text(
-                "Действие отменено 👍",
+                "Действие отменено 👍\nВыбери действие 👇",
                 reply_markup=MAIN_MENU
             )
         else:
             await update.message.reply_text(
-                "Действие отменено 👍",
+                "Действие отменено 👍\nВыбери действие 👇",
                 reply_markup=MAIN_MENU
             )
 
