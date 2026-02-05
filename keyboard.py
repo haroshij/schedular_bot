@@ -1,4 +1,5 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from utils import format_task_date
 
 # Главное меню
 MAIN_MENU = InlineKeyboardMarkup([
@@ -22,5 +23,6 @@ def task_actions(task_id: str) -> InlineKeyboardMarkup:
 def tasks_inline_menu(tasks: list) -> InlineKeyboardMarkup:
     kb = []
     for t in tasks:
-        kb.append([InlineKeyboardButton(t["title"], callback_data=f"task:{t['id']}")])
+        text = f"{t['title']} ⏰ {format_task_date(t['scheduled_time'])}"
+        kb.append([InlineKeyboardButton(text, callback_data=f"task:{t['id']}")])
     return InlineKeyboardMarkup(kb)
