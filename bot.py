@@ -13,7 +13,6 @@ from telegram.ext import (
     filters,
     CallbackContext,
 )
-from telegram.error import BadRequest
 
 from database import (
     init_db,
@@ -36,10 +35,7 @@ USER_TZ = timezone(timedelta(hours=3))
 
 # ---------------- START ----------------
 async def start(update: Update, _: CallbackContext):
-    await update.message.reply_text(
-        "Привет! Выбери действие 👇",
-        reply_markup=MAIN_MENU
-    )
+    await update.message.reply_text("Привет! Выбери действие 👇", reply_markup=MAIN_MENU)
 
 
 # ---------------- ADD TASK ----------------
@@ -68,7 +64,6 @@ async def add_task_text(update: Update, context: CallbackContext):
         title=update.message.text,
         scheduled_time=context.user_data["task_time"]
     )
-
     await update.message.reply_text("✅ Задача добавлена", reply_markup=MAIN_MENU)
     return ConversationHandler.END
 
@@ -130,91 +125,82 @@ async def callbacks(update: Update, context: CallbackContext):
     await query.answer()
     data = query.data
 
-    # --- MENU ---
-    if data == "menu":
-        try:
+    try:
+        # --- MENU ---
+        if data == "menu":
             if query.message and query.message.text != "Выбери действие 👇":
                 await query.edit_message_text("Выбери действие 👇", reply_markup=MAIN_MENU)
-        except BadRequest:
-            pass
-        return None
+            return None
 
-    # --- ADD TASK ---
-    if data == "add_task":
-        await query.edit_message_text("Введи дату и время:\nYYYY-MM-DD HH:MM")
-        return ADD_DATE
+        # --- ADD TASK ---
+        if data == "add_task":
+            await query.edit_message_text("Введи дату и время:\nYYYY-MM-DD HH:MM")
+            return ADD_DATE
 
-    if data.startswith("postpone:"):
-        task_id = data.split(":", 1)[1]
-        context.user_data["task_id"] = task_id
-        await query.edit_message_text("Введи новую дату:\nYYYY-MM-DD HH:MM")
-        return POSTPONE_DATE
+        if data.startswith("postpone:"):
+            task_id = data.split(":", 1)[1]
+            context.user_data["task_id"] = task_id
+            await query.edit_message_text("Введи новую дату:\nYYYY-MM-DD HH:MM")
+            return POSTPONE_DATE
 
-    # --- SEARCH ---
-    if data == "search":
-        await query.edit_message_text("Введите запрос для поиска:")
-        return SEARCH_QUERY
+        # --- SEARCH ---
+        if data == "search":
+            await query.edit_message_text("Введите запрос для поиска:")
+            return SEARCH_QUERY
 
-    # --- WEATHER ---
-    if data in ("weather", "weather_change"):
-        user_id = update.effective_user.id
-        city = await get_user_city(user_id) if data == "weather" else None
+        # --- WEATHER ---
+        if data in ("weather", "weather_change"):
+            user_id = update.effective_user.id
+            city = await get_user_city(user_id) if data == "weather" else None
 
-        if city:
-            weather_data = await get_weather(city)
-            if "error" in weather_data:
-                text = f"Ошибка получения погоды для города {city}\n{weather_data['error']}"
-            else:
-                desc = weather_data["weather"][0]["description"]
-                temp = weather_data["main"]["temp"]
-                text = f"🌤 {city.title()}\n{desc.capitalize()}\n🌡 {round(temp)}°C"
+            if city:
+                weather_data = await get_weather(city)
+                if "error" in weather_data:
+                    text = f"Ошибка получения погоды для города {city}\n{weather_data['error']}"
+                else:
+                    desc = weather_data["weather"][0]["description"]
+                    temp = weather_data["main"]["temp"]
+                    text = f"🌤 {city.title()}\n{desc.capitalize()}\n🌡 {round(temp)}°C"
 
-            kb = InlineKeyboardMarkup([
-                [InlineKeyboardButton("Выбрать другой город", callback_data="weather_change")],
-                [InlineKeyboardButton("В меню", callback_data="menu")]
-            ])
-            try:
+                kb = InlineKeyboardMarkup([
+                    [InlineKeyboardButton("Выбрать другой город", callback_data="weather_change")],
+                    [InlineKeyboardButton("В меню", callback_data="menu")]
+                ])
                 if query.message and query.message.text != text:
                     await query.edit_message_text(text, reply_markup=kb)
-            except BadRequest:
-                pass
+                return None
+            else:
+                await query.edit_message_text("Введите город:")
+                return WEATHER_CITY
+
+        # --- NEAREST TASK ---
+        if data == "nearest_task":
+            task = await get_nearest_task(update.effective_user.id)
+            if task:
+                text = format_task(task)
+                kb = task_actions(task["id"])
+            else:
+                text = "Нет задач"
+                kb = MAIN_MENU
+            if query.message and query.message.text != text:
+                await query.edit_message_text(text, reply_markup=kb)
             return None
-        else:
-            await query.edit_message_text("Введите город:")
-            return WEATHER_CITY
 
-    # --- NEAREST TASK ---
-    if data == "nearest_task":
-        task = await get_nearest_task(update.effective_user.id)
-        if task:
-            text = format_task(task)
-            kb = task_actions(task["id"])
-        else:
-            text = "Нет задач"
-            kb = MAIN_MENU
-        try:
+        # --- ALL TASKS ---
+        if data == "all_tasks":
+            tasks = await get_all_tasks(update.effective_user.id)
+            if tasks:
+                text = "Выберите задачу:"
+                kb = tasks_inline_menu(tasks)
+            else:
+                text = "Нет задач"
+                kb = MAIN_MENU
             if query.message and query.message.text != text:
                 await query.edit_message_text(text, reply_markup=kb)
-        except BadRequest:
-            pass
-        return None
+            return None
 
-    # --- ALL TASKS ---
-    if data == "all_tasks":
-        tasks = await get_all_tasks(update.effective_user.id)
-        if tasks:
-            text = "Выберите задачу:"
-            kb = tasks_inline_menu(tasks)
-        else:
-            text = "Нет задач"
-            kb = MAIN_MENU
-        try:
-            if query.message and query.message.text != text:
-                await query.edit_message_text(text, reply_markup=kb)
-        except BadRequest:
-            pass
-        return None
-
+    except Exception as e:
+        print(f"Ошибка в callbacks: {e}")
     return None
 
 
@@ -282,6 +268,9 @@ def main():
             fallbacks=[],
         )
     )
+
+    # CALLBACKS
+    app.add_handler(CallbackQueryHandler(callbacks))
 
     # START BOT
     app.run_polling()
