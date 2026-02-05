@@ -283,9 +283,6 @@ def main():
         )
     )
 
-    # CALLBACKS
-    app.add_handler(CallbackQueryHandler(callbacks))
-
     # START BOT
     app.run_polling()
 
