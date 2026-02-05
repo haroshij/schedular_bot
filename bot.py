@@ -365,7 +365,12 @@ def main():
     app.add_handler(
         ConversationHandler(
             entry_points=[CallbackQueryHandler(callbacks, pattern="^postpone:")],
-            states={POSTPONE_DATE: [MessageHandler(filters.TEXT & ~filters.COMMAND, postpone_date)]},
+            states={
+                POSTPONE_DATE: [
+                    MessageHandler(filters.TEXT & ~filters.COMMAND, postpone_date),
+                    CallbackQueryHandler(cancel, pattern="^cancel$")
+                ]
+            },
             fallbacks=[
                 CallbackQueryHandler(cancel, pattern="^menu$")
             ],
