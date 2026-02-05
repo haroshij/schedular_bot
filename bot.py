@@ -38,7 +38,12 @@ USER_TZ = timezone(timedelta(hours=3))
 # ---------------- REMINDERS ----------------
 async def send_task_reminder(context: CallbackContext):
     """Отправляет напоминание о задаче, только если она ещё pending."""
-    task: dict | object = context.job.data
+    job_data: dict | object = context.job.data  # говорим IDE, что это dict или object
+    if not job_data:
+        return
+
+    task: dict = job_data["task"]
+    chat_id: int = job_data["chat_id"]
 
     # Получаем актуальные данные из БД
     from database import get_task_by_id
@@ -50,7 +55,7 @@ async def send_task_reminder(context: CallbackContext):
     text = f"⏰ Напоминание!\n\n{format_task(task_db)}"
 
     await context.bot.send_message(
-        chat_id=task_db["user_id"],
+        chat_id=chat_id,  # теперь точно отправляем владельцу задачи
         text=text,
         reply_markup=task_actions(task_db["id"])
     )
@@ -67,10 +72,12 @@ async def restore_jobs(app):
 
     for task in tasks:
         delay = (task["scheduled_time"] - now).total_seconds()
+        chat_id = task["user_id"]  # явно указываем чей chat_id
+
         app.job_queue.run_once(
             send_task_reminder,
             delay,
-            data=task,
+            data={"task": task, "chat_id": chat_id},  # передаём в job словарь
             name=f"task_{task['id']}"
         )
 
