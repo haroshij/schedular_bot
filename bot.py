@@ -68,6 +68,13 @@ async def add_task_date(update: Update, context: CallbackContext):
         )
         return ADD_DATE
 
+    elif dt < datetime.now():
+        await update.message.reply_text(
+            "❌ Нельзя вводить прошедшую дату",
+            reply_markup=ReplyKeyboardRemove()
+        )
+        return ADD_DATE
+
     context.user_data["task_time"] = dt
     await update.message.reply_text(
         "Теперь введи текст задачи"
