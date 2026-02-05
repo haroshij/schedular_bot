@@ -9,6 +9,9 @@ except locale.Error:
 
 # Московский часовой пояс
 MOSCOW_TZ = timezone(timedelta(hours=3))
+RU_DAYS = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"]
+RU_MONTHS = ["Января", "Февраля", "Марта", "Апреля", "Мая", "Июня",
+             "Июля", "Августа", "Сентября", "Октября", "Ноября", "Декабря"]
 
 def parse_datetime(text: str):
     """Парсинг даты и времени из строки формата YYYY-MM-DD HH:MM"""
@@ -19,7 +22,7 @@ def parse_datetime(text: str):
 
 def format_task_date(dt_or_str) -> str:
     """
-    Преобразует datetime или ISO-строку в читаемый формат:
+    Преобразует datetime или ISO-строку в читаемый формат на русском:
     Например: datetime -> "Суббота, 01 Октября 2222 10:00"
     """
     if isinstance(dt_or_str, str):
@@ -34,7 +37,11 @@ def format_task_date(dt_or_str) -> str:
         dt = dt.replace(tzinfo=timezone.utc)
     dt_local = dt.astimezone(MOSCOW_TZ)
 
-    return dt_local.strftime("%A, %d %B %Y %H:%M")
+    day_name = RU_DAYS[dt_local.weekday()]
+    month_name = RU_MONTHS[dt_local.month - 1]
+
+    return f"{day_name}, {dt_local.day:02d} {month_name} {
+    dt_local.year} {dt_local.hour:02d}:{dt_local.minute:02d}"
 
 def format_task(task: dict) -> str:
     """Форматирует задачу для показа пользователю"""
