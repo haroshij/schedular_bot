@@ -367,7 +367,6 @@ def main():
             entry_points=[CallbackQueryHandler(callbacks, pattern="^postpone:")],
             states={POSTPONE_DATE: [MessageHandler(filters.TEXT & ~filters.COMMAND, postpone_date)]},
             fallbacks=[
-                CommandHandler("cancel", cancel),
                 CallbackQueryHandler(cancel, pattern="^menu$")
             ],
         )
