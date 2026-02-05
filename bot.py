@@ -70,7 +70,7 @@ async def add_task_date(update: Update, context: CallbackContext):
 
     elif dt < datetime.now():
         await update.message.reply_text(
-            "❌ Нельзя вводить прошедшую дату",
+            "❌ Нельзя вводить прошедшую дату. Попробуй ещё раз",
             reply_markup=ReplyKeyboardRemove()
         )
         return ADD_DATE
@@ -256,14 +256,14 @@ async def postpone_date(update: Update, context: CallbackContext):
     dt = parse_datetime(update.message.text)
     if not dt:
         await update.message.reply_text(
-            "❌ Неверный формат",
+            "❌ Неверный формат. Попробуй ещё раз",
             reply_markup=ReplyKeyboardRemove()
         )
         return POSTPONE_DATE
 
     elif dt < datetime.now():
         await update.message.reply_text(
-            "❌ Нельзя вводить прошедшую дату",
+            "❌ Нельзя вводить прошедшую дату. Попробуй ещё раз",
             reply_markup=ReplyKeyboardRemove()
         )
         return POSTPONE_DATE
