@@ -26,7 +26,7 @@ from database import (
     get_task_by_id,
     mark_task_done
 )
-from utils import parse_datetime, format_task
+from utils import parse_datetime, format_task, translate_weather
 from handlers.search import search_duckduckgo
 from handlers.weather import get_weather
 from keyboard import MAIN_MENU, task_actions, tasks_inline_menu
@@ -160,7 +160,8 @@ async def callbacks(update: Update, context: CallbackContext):
                 if "error" in weather_data:
                     text = f"Ошибка получения погоды для города {city}\n{weather_data['error']}"
                 else:
-                    desc = weather_data["weather"][0]["description"]
+                    desc_en = weather_data["weather"][0]["description"]
+                    desc = translate_weather(desc_en)
                     temp = weather_data["main"]["temp"]
                     text = f"🌤 {city.title()}\n{desc.capitalize()}\n🌡 {round(temp)}°C"
 

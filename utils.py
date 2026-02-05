@@ -12,6 +12,25 @@ MOSCOW_TZ = timezone(timedelta(hours=3))
 RU_DAYS = ["ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ", "ВС"]
 RU_MONTHS = ["Янв", "Фев", "Мар", "Апр", "Май", "Июн",
              "Июл", "Авг", "Сен", "Окт", "Ноя", "Дек"]
+WEATHER_TRANSLATIONS = {
+    "Sunny": "Солнечно",
+    "Clear": "Ясно",
+    "Partly cloudy": "Переменная облачность",
+    "Cloudy": "Облачно",
+    "Overcast": "Пасмурно",
+    "Light rain": "Небольшой дождь",
+    "Rain": "Дождь",
+    "Heavy rain": "Сильный дождь",
+    "Thunderstorm": "Гроза",
+    "Snow": "Снег",
+    "Fog": "Туман",
+    # — добавь ещё по необходимости —
+}
+
+def translate_weather(desc: str) -> str:
+    """Переводит английское описание погоды на русский, если есть в словаре."""
+    desc = desc.capitalize()
+    return WEATHER_TRANSLATIONS.get(desc, desc)
 
 def parse_datetime(text: str):
     """Парсинг даты и времени из строки формата YYYY-MM-DD HH:MM"""
