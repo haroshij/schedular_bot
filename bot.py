@@ -118,7 +118,7 @@ async def weather_city(update: Update, _: CallbackContext):
     return ConversationHandler.END
 
 
-# --- CALLBACKS ---
+# ---------------- CALLBACKS ----------------
 async def callbacks(update: Update, context: CallbackContext):
     query = update.callback_query
     if not query:
@@ -166,7 +166,7 @@ async def callbacks(update: Update, context: CallbackContext):
 
                 kb = InlineKeyboardMarkup([
                     [InlineKeyboardButton("Выбрать другой город", callback_data="weather_change")],
-                    [InlineKeyboardButton("В меню", callback_data="menu")]
+                    [InlineKeyboardButton("↩️ В меню", callback_data="menu")]
                 ])
                 if query.message and query.message.text != text:
                     await query.edit_message_text(text, reply_markup=kb)
@@ -180,12 +180,19 @@ async def callbacks(update: Update, context: CallbackContext):
             task = await get_nearest_task(update.effective_user.id)
             if task:
                 text = format_task(task)
-                kb = task_actions(task["id"])
+                kb = task_actions(task["id"])  # кнопки "Выполнена", "Перенести"
             else:
                 text = "Нет задач"
                 kb = MAIN_MENU
             if query.message and query.message.text != text:
                 await query.edit_message_text(text, reply_markup=kb)
+            return None
+
+        # --- MARK TASK DONE ---
+        if data.startswith("done:"):
+            task_id = data.split(":", 1)[1]
+            await mark_task_done(task_id)
+            await query.edit_message_text("✅ Задача выполнена", reply_markup=MAIN_MENU)
             return None
 
         # --- ALL TASKS ---
@@ -194,6 +201,12 @@ async def callbacks(update: Update, context: CallbackContext):
             if tasks:
                 text = "Выберите задачу:"
                 kb = tasks_inline_menu(tasks)
+                # Создаем новую разметку с добавленной кнопкой "В меню"
+                new_keyboard = tuple(list(row) for row in kb.inline_keyboard)  # копируем строки
+                new_keyboard += (  # добавляем новую строку
+                    (InlineKeyboardButton("↩️ В меню", callback_data="menu"),),
+                )
+                kb = InlineKeyboardMarkup(new_keyboard)
             else:
                 text = "Нет задач"
                 kb = MAIN_MENU
@@ -201,27 +214,23 @@ async def callbacks(update: Update, context: CallbackContext):
                 await query.edit_message_text(text, reply_markup=kb)
             return None
 
-        # --- DYNAMIC TASK CALLBACKS ---
-        if data.startswith("done:"):
-            task_id = data.split(":", 1)[1]
-            await mark_task_done(task_id)
-            await query.edit_message_text("✅ Задача выполнена", reply_markup=MAIN_MENU)
-            return None
-
+        # --- SELECT TASK FROM ALL ---
         if data.startswith("task:"):
             task_id = data.split(":", 1)[1]
             task = await get_task_by_id(task_id)
             if task:
                 text = format_task(task)
-                kb = task_actions(task_id)
+                kb = task_actions(task["id"])  # кнопки "Выполнена", "Перенести"
             else:
                 text = "Задача не найдена"
                 kb = MAIN_MENU
-            await query.edit_message_text(text, reply_markup=kb)
+            if query.message and query.message.text != text:
+                await query.edit_message_text(text, reply_markup=kb)
             return None
 
     except Exception as e:
         print(f"Ошибка в callbacks: {e}")
+
     return None
 
 
