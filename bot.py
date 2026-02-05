@@ -259,6 +259,8 @@ async def callbacks(update: Update, context: CallbackContext):
     data = query.data
 
     try:
+        user_id = update.effective_user.id  # текущий пользователь
+
         # --- MENU ---
         if data == "menu":
             if getattr(query.message, "text", None) != "Выбери действие 👇":
@@ -281,6 +283,10 @@ async def callbacks(update: Update, context: CallbackContext):
 
         if data.startswith("postpone:"):
             task_id = data.split(":", 1)[1]
+            task = await get_task_by_id(task_id)
+            if not task or task["user_id"] != user_id:
+                await query.edit_message_text("❌ Эта задача не принадлежит вам", reply_markup=MAIN_MENU)
+                return None
             context.user_data["task_id"] = task_id
             await query.edit_message_text(
                 "Введите дату и время ⏰\n\n"
@@ -289,7 +295,8 @@ async def callbacks(update: Update, context: CallbackContext):
                 "• завтра 9:00",
                 reply_markup=InlineKeyboardMarkup(
                     [[InlineKeyboardButton("❌ Отмена", callback_data="cancel")],
-                     [InlineKeyboardButton("↩️ В меню", callback_data="menu")]])
+                     [InlineKeyboardButton("↩️ В меню", callback_data="menu")]]
+                )
             )
             return POSTPONE_DATE
 
@@ -305,9 +312,7 @@ async def callbacks(update: Update, context: CallbackContext):
 
         # --- WEATHER ---
         if data in ("weather", "weather_change"):
-            user_id = update.effective_user.id
             city = await get_user_city(user_id) if data == "weather" else None
-
             if city:
                 weather_data = await get_weather(city)
                 if "error" in weather_data:
@@ -336,10 +341,10 @@ async def callbacks(update: Update, context: CallbackContext):
 
         # --- NEAREST TASK ---
         if data == "nearest_task":
-            task = await get_nearest_task(update.effective_user.id)
+            task = await get_nearest_task(user_id)
             if task:
                 text = format_task(task)
-                kb = task_actions(task["id"])  # кнопки "Выполнена", "Перенести"
+                kb = task_actions(task["id"])
             else:
                 text = "Нет задач"
                 kb = MAIN_MENU
@@ -350,19 +355,22 @@ async def callbacks(update: Update, context: CallbackContext):
         # --- MARK TASK DONE ---
         if data.startswith("done:"):
             task_id = data.split(":", 1)[1]
+            task = await get_task_by_id(task_id)
+            if not task or task["user_id"] != user_id:
+                await query.edit_message_text("❌ Эта задача не принадлежит вам", reply_markup=MAIN_MENU)
+                return None
             await mark_task_done(task_id)
             await query.edit_message_text("✅ Задача выполнена", reply_markup=MAIN_MENU)
             return None
 
         # --- ALL TASKS ---
         if data == "all_tasks":
-            tasks = await get_all_tasks(update.effective_user.id)
+            tasks = await get_all_tasks(user_id)
             if tasks:
                 text = "Выберите задачу:"
                 kb = tasks_inline_menu(tasks)
-                # Создаем новую разметку с добавленной кнопкой "В меню"
-                new_keyboard = tuple(list(row) for row in kb.inline_keyboard)  # копируем строки
-                new_keyboard += (  # добавляем новую строку
+                new_keyboard = tuple(list(row) for row in kb.inline_keyboard)
+                new_keyboard += (
                     (InlineKeyboardButton("↩️ В меню", callback_data="menu"),),
                 )
                 kb = InlineKeyboardMarkup(new_keyboard)
@@ -377,12 +385,11 @@ async def callbacks(update: Update, context: CallbackContext):
         if data.startswith("task:"):
             task_id = data.split(":", 1)[1]
             task = await get_task_by_id(task_id)
-            if task:
-                text = format_task(task)
-                kb = task_actions(task["id"])  # кнопки "Выполнена", "Перенести"
-            else:
-                text = "Задача не найдена"
-                kb = MAIN_MENU
+            if not task or task["user_id"] != user_id:
+                await query.edit_message_text("❌ Эта задача не принадлежит вам", reply_markup=MAIN_MENU)
+                return None
+            text = format_task(task)
+            kb = task_actions(task["id"])
             if getattr(query.message, "text", None) != text:
                 await query.edit_message_text(text, reply_markup=kb)
             return None
