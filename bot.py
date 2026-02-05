@@ -106,7 +106,8 @@ async def weather_city(update: Update, _: CallbackContext):
     if "error" in data:
         text = f"Ошибка получения погоды для города {city}\n{data['error']}"
     else:
-        desc = data["weather"][0]["description"]
+        desc_en = data["weather"][0]["description"]
+        desc = translate_weather(desc_en)
         temp = data["main"]["temp"]
         text = f"🌤 {city.title()}\n{desc.capitalize()}\n🌡 {round(temp)}°C"
 
