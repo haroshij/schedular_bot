@@ -10,6 +10,7 @@ MAIN_MENU = InlineKeyboardMarkup([
     [InlineKeyboardButton("🌤 Погода", callback_data="weather")]
 ])
 
+
 # Кнопки для конкретной задачи
 def task_actions(task_id: str) -> InlineKeyboardMarkup:
     kb = [
@@ -19,11 +20,18 @@ def task_actions(task_id: str) -> InlineKeyboardMarkup:
     ]
     return InlineKeyboardMarkup(kb)
 
+
 # Список всех задач
 def tasks_inline_menu(tasks: list) -> InlineKeyboardMarkup:
     kb = []
     for t in tasks:
-        text = (f"  {t['title']}"
-                f"⏰ {format_task_date(t['scheduled_time'])}")
-        kb.append([InlineKeyboardButton(text, callback_data=f"task:{t['id']}")])
+        # Первая кнопка — название
+        kb.append([InlineKeyboardButton(t['title'], callback_data=f"task:{t['id']}")])
+        # Вторая кнопка — дата
+        kb.append([InlineKeyboardButton(
+            f"⏰ {format_task_date(t['scheduled_time'])}", callback_data=f"task:{t['id']}")]
+        )
+
+    # Кнопка "↩️ В меню"
+    kb.append([InlineKeyboardButton("↩️ В меню", callback_data="menu")])
     return InlineKeyboardMarkup(kb)
