@@ -193,7 +193,10 @@ async def callbacks(update: Update, context: CallbackContext):
                 "Введите дату и время ⏰\n\n"
                 "Примеры:\n• 2026-02-10 18:30\n"
                 "• сегодня 21:00\n"
-                "• завтра 9:00"
+                "• завтра 9:00",
+                reply_markup = InlineKeyboardMarkup(
+                    [[InlineKeyboardButton("❌ Отмена", callback_data="cancel")],
+                     [InlineKeyboardButton("↩️ В меню", callback_data="menu")]])
             )
             return POSTPONE_DATE
 
