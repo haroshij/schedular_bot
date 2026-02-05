@@ -12,6 +12,7 @@ if not DATABASE_URL:
 
 pool: Optional[asyncpg.pool.Pool] = None
 
+
 async def init_db() -> None:
     global pool
     if pool is None:
