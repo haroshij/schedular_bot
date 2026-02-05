@@ -10,6 +10,7 @@ MAIN_MENU = InlineKeyboardMarkup([
     [InlineKeyboardButton("🌤 Погода", callback_data="weather")]
 ])
 
+
 # Кнопки для конкретной задачи
 def task_actions(task_id: str) -> InlineKeyboardMarkup:
     kb = [
@@ -18,6 +19,7 @@ def task_actions(task_id: str) -> InlineKeyboardMarkup:
         [InlineKeyboardButton("↩️ В меню", callback_data="menu")]
     ]
     return InlineKeyboardMarkup(kb)
+
 
 # Список всех задач
 def tasks_inline_menu(tasks: list) -> InlineKeyboardMarkup:
