@@ -1,6 +1,7 @@
 import asyncio
 from ddgs import DDGS
 
+
 async def search_duckduckgo(query: str) -> list[str]:
     """
     Асинхронный поиск через duckduckgo_search.
@@ -36,6 +37,7 @@ async def main():
     res = await search_duckduckgo(query)
     for r in res:
         print(r, "\n")
+
 
 if __name__ == "__main__":
     asyncio.run(main())
