@@ -1,132 +1,129 @@
-import aiosqlite
+import os
+import asyncpg
 from datetime import datetime
 from typing import Optional, List, Dict
 
-DB_NAME = "tasks.db"
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+pool: asyncpg.Pool | None = None
 
 
 # ---------- Init ----------
 async def init_db():
-    async with aiosqlite.connect(DB_NAME) as conn:
+    global pool
+    pool = await asyncpg.create_pool(DATABASE_URL)
+
+    async with pool.acquire() as conn:
         await conn.execute("""
         CREATE TABLE IF NOT EXISTS tasks (
             id TEXT PRIMARY KEY,
-            user_id INTEGER NOT NULL,
+            user_id BIGINT NOT NULL,
             title TEXT NOT NULL,
-            scheduled_time TEXT NOT NULL,
+            scheduled_time TIMESTAMPTZ NOT NULL,
             status TEXT NOT NULL
         )
         """)
 
         await conn.execute("""
         CREATE TABLE IF NOT EXISTS users (
-            user_id INTEGER PRIMARY KEY,
+            user_id BIGINT PRIMARY KEY,
             city TEXT
         )
         """)
 
-        await conn.commit()
-
 
 # ---------- Tasks ----------
 async def add_task(task_id: str, user_id: int, title: str, scheduled_time: datetime):
-    async with aiosqlite.connect(DB_NAME) as conn:
+    async with pool.acquire() as conn:
         await conn.execute(
             """
             INSERT INTO tasks (id, user_id, title, scheduled_time, status)
-            VALUES (?, ?, ?, ?, 'pending')
+            VALUES ($1, $2, $3, $4, 'pending')
             """,
-            (task_id, user_id, title, scheduled_time.isoformat())
+            task_id, user_id, title, scheduled_time
         )
-        await conn.commit()
 
 
 async def get_nearest_task(user_id: int) -> Optional[Dict]:
-    async with aiosqlite.connect(DB_NAME) as conn:
-        conn.row_factory = aiosqlite.Row
-        cur = await conn.execute(
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
             """
             SELECT * FROM tasks
-            WHERE user_id = ?
+            WHERE user_id = $1
               AND status = 'pending'
             ORDER BY scheduled_time
             LIMIT 1
             """,
-            (user_id,)
+            user_id
         )
-        row = await cur.fetchone()
         return dict(row) if row else None
 
 
 async def get_all_tasks(user_id: int) -> List[Dict]:
-    async with aiosqlite.connect(DB_NAME) as conn:
-        conn.row_factory = aiosqlite.Row
-        cur = await conn.execute(
+    async with pool.acquire() as conn:
+        rows = await conn.fetch(
             """
             SELECT * FROM tasks
-            WHERE user_id = ?
-               AND status = 'pending'
+            WHERE user_id = $1
+              AND status = 'pending'
             ORDER BY scheduled_time
             """,
-            (user_id,)
+            user_id
         )
-        rows = await cur.fetchall()
         return [dict(row) for row in rows]
 
 
 async def update_task_time(task_id: str, new_time: datetime):
-    async with aiosqlite.connect(DB_NAME) as conn:
+    async with pool.acquire() as conn:
         await conn.execute(
             """
             UPDATE tasks
-            SET scheduled_time = ?, status = 'pending'
-            WHERE id = ?
+            SET scheduled_time = $1, status = 'pending'
+            WHERE id = $2
             """,
-            (new_time.isoformat(), task_id)
+            new_time, task_id
         )
-        await conn.commit()
 
 
 async def mark_task_done(task_id: str):
-    async with aiosqlite.connect(DB_NAME) as conn:
+    async with pool.acquire() as conn:
         await conn.execute(
             """
             UPDATE tasks
             SET status = 'done'
-            WHERE id = ?
+            WHERE id = $1
             """,
-            (task_id,)
+            task_id
         )
-        await conn.commit()
+
+
+async def get_task_by_id(task_id: str) -> Optional[Dict]:
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            "SELECT * FROM tasks WHERE id = $1",
+            task_id
+        )
+        return dict(row) if row else None
 
 
 # ---------- Users ----------
-async def get_user_city(user_id: int) -> str | None:
-    async with aiosqlite.connect(DB_NAME) as conn:
-        conn.row_factory = aiosqlite.Row
-        cur = await conn.execute(
-            "SELECT city FROM users WHERE user_id = ?",
-            (user_id,)
+async def get_user_city(user_id: int) -> Optional[str]:
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            "SELECT city FROM users WHERE user_id = $1",
+            user_id
         )
-        row = await cur.fetchone()
         return row["city"] if row else None
 
 
 async def set_user_city(user_id: int, city: str):
-    async with aiosqlite.connect(DB_NAME) as conn:
+    async with pool.acquire() as conn:
         await conn.execute(
             """
             INSERT INTO users (user_id, city)
-            VALUES (?, ?)
-            ON CONFLICT(user_id) DO UPDATE SET city = excluded.city
+            VALUES ($1, $2)
+            ON CONFLICT (user_id)
+            DO UPDATE SET city = EXCLUDED.city
             """,
-            (user_id, city)
+            user_id, city
         )
-        await conn.commit()
-
-async def get_task_by_id(task_id: str) -> dict | None:
-    async with aiosqlite.connect(DB_NAME) as conn:
-        conn.row_factory = aiosqlite.Row
-        cur = await conn.execute("SELECT * FROM tasks WHERE id = ?", (task_id,))
-        row = await cur.fetchone()
-        return dict(row) if row else None
