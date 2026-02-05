@@ -1,7 +1,7 @@
 import os
 import time
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from dotenv import load_dotenv
 
@@ -68,7 +68,9 @@ async def add_task_date(update: Update, context: CallbackContext):
         )
         return ADD_DATE
 
-    elif dt < datetime.now():
+    dt = dt.replace(tzinfo=timezone.utc)
+
+    if dt < datetime.now(timezone.utc):
         await update.message.reply_text(
             "❌ Нельзя вводить прошедшую дату. Попробуй ещё раз",
             reply_markup=ReplyKeyboardRemove()
@@ -261,7 +263,9 @@ async def postpone_date(update: Update, context: CallbackContext):
         )
         return POSTPONE_DATE
 
-    elif dt < datetime.now():
+    dt = dt.replace(tzinfo=timezone.utc)
+
+    if dt < datetime.now(timezone.utc):
         await update.message.reply_text(
             "❌ Нельзя вводить прошедшую дату. Попробуй ещё раз",
             reply_markup=ReplyKeyboardRemove()
