@@ -44,14 +44,24 @@ async def start(update: Update, _: CallbackContext):
 async def add_task_date(update: Update, context: CallbackContext):
     dt = parse_datetime(update.message.text)
     if not dt:
-        await update.message.reply_text("❌ Неверный формат. Попробуй ещё раз")
+        await update.message.reply_text(
+            "❌ Неверный формат. Попробуйте ещё раз\n"
+            "Примеры:\n• 2026-02-10 18:30\n"
+            "• сегодня 21:00\n"
+            "• завтра 9:00"
+        )
         return ADD_DATE
 
     dt_local = dt.replace(tzinfo=USER_TZ)
     dt_utc = dt_local.astimezone(timezone.utc)
 
     if dt_utc < datetime.now(timezone.utc):
-        await update.message.reply_text("❌ Нельзя вводить прошедшую дату. Попробуй ещё раз")
+        await update.message.reply_text(
+            "❌ Нельзя вводить прошедшую дату. Попробуйте ещё раз\n"
+            "Примеры:\n• 2026-02-10 18:30\n"
+            "• сегодня 21:00\n"
+            "• завтра 9:00"
+        )
         return ADD_DATE
 
     context.user_data["task_time"] = dt_utc
@@ -74,14 +84,24 @@ async def add_task_text(update: Update, context: CallbackContext):
 async def postpone_date(update: Update, context: CallbackContext):
     dt = parse_datetime(update.message.text)
     if not dt:
-        await update.message.reply_text("❌ Неверный формат. Попробуй ещё раз")
+        await update.message.reply_text(
+            "❌ Неверный формат. Попробуйте ещё раз\n"
+            "Примеры:\n• 2026-02-10 18:30\n"
+            "• сегодня 21:00\n"
+            "• завтра 9:00"
+        )
         return POSTPONE_DATE
 
     dt_local = dt.replace(tzinfo=USER_TZ)
     dt_utc = dt_local.astimezone(timezone.utc)
 
     if dt_utc < datetime.now(timezone.utc):
-        await update.message.reply_text("❌ Нельзя вводить прошедшую дату. Попробуй ещё раз")
+        await update.message.reply_text(
+            "❌ Нельзя вводить прошедшую дату. Попробуйте ещё раз\n"
+            "Примеры:\n• 2026-02-10 18:30\n"
+            "• сегодня 21:00\n"
+            "• завтра 9:00"
+        )
         return POSTPONE_DATE
 
     await update_task_time(context.user_data["task_id"], dt_utc)
@@ -137,7 +157,12 @@ async def callbacks(update: Update, context: CallbackContext):
 
         # --- ADD TASK ---
         if data == "add_task":
-            await query.edit_message_text("Введи дату и время:\nYYYY-MM-DD HH:MM")
+            await query.edit_message_text(
+                "Введите дату и время ⏰\n\n"
+                "Примеры:\n• 2026-02-10 18:30\n"
+                "• сегодня 21:00\n"
+                "• завтра 9:00"
+            )
             return ADD_DATE
 
         if data.startswith("postpone:"):

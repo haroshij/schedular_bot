@@ -42,6 +42,7 @@ WEATHER_TRANSLATIONS = {
 
     # Снег / лед
     "Light snow": "Лёгкий снег",
+    "Light snow, snow": "Лёгкий снег, снег",
     "Moderate snow": "Умеренный снег",
     "Heavy snow": "Сильный снег",
     "Snow": "Снег",
@@ -68,11 +69,29 @@ def translate_weather(desc: str) -> str:
     return WEATHER_TRANSLATIONS.get(desc, desc)
 
 def parse_datetime(text: str):
-    """Парсинг даты и времени из строки формата YYYY-MM-DD HH:MM"""
+    text = text.strip().lower()
+    now = datetime.now(MOSCOW_TZ)
+
+    # 1. Строгий формат (оставляем!)
     try:
         return datetime.strptime(text, "%Y-%m-%d %H:%M")
     except ValueError:
-        return None
+        pass
+
+    # 2. Сегодня / завтра
+    if text.startswith("сегодня"):
+        time_part = text.replace("сегодня", "").strip()
+        hour, minute = map(int, time_part.split(":"))
+        return now.replace(hour=hour, minute=minute, second=0, microsecond=0)
+
+    if text.startswith("завтра"):
+        time_part = text.replace("завтра", "").strip()
+        hour, minute = map(int, time_part.split(":"))
+        return (now + timedelta(days=1)).replace(
+            hour=hour, minute=minute, second=0, microsecond=0
+        )
+
+    return None
 
 def format_task_date(dt_or_str) -> str:
     """
