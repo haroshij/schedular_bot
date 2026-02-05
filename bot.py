@@ -22,7 +22,9 @@ from database import (
     get_user_city,
     set_user_city,
     get_nearest_task,
-    get_all_tasks
+    get_all_tasks,
+    get_task_by_id,
+    mark_task_done
 )
 from utils import parse_datetime, format_task
 from handlers.search import search_duckduckgo
@@ -116,7 +118,7 @@ async def weather_city(update: Update, _: CallbackContext):
     return ConversationHandler.END
 
 
-# ---------------- CALLBACKS ----------------
+# --- CALLBACKS ---
 async def callbacks(update: Update, context: CallbackContext):
     query = update.callback_query
     if not query:
@@ -197,6 +199,25 @@ async def callbacks(update: Update, context: CallbackContext):
                 kb = MAIN_MENU
             if query.message and query.message.text != text:
                 await query.edit_message_text(text, reply_markup=kb)
+            return None
+
+        # --- DYNAMIC TASK CALLBACKS ---
+        if data.startswith("done:"):
+            task_id = data.split(":", 1)[1]
+            await mark_task_done(task_id)
+            await query.edit_message_text("✅ Задача выполнена", reply_markup=MAIN_MENU)
+            return None
+
+        if data.startswith("task:"):
+            task_id = data.split(":", 1)[1]
+            task = await get_task_by_id(task_id)
+            if task:
+                text = format_task(task)
+                kb = task_actions(task_id)
+            else:
+                text = "Задача не найдена"
+                kb = MAIN_MENU
+            await query.edit_message_text(text, reply_markup=kb)
             return None
 
     except Exception as e:
