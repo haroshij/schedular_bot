@@ -1,4 +1,3 @@
-import asyncio
 import os
 from datetime import datetime, timezone, timedelta
 from uuid import uuid4
@@ -14,6 +13,7 @@ from telegram.ext import (
     filters,
     CallbackContext,
 )
+from telegram.error import BadRequest
 
 from database import (
     init_db,
@@ -96,7 +96,6 @@ async def postpone_date(update: Update, context: CallbackContext):
 async def search_query(update: Update, _: CallbackContext):
     query_text = update.message.text
     results = await search_duckduckgo(query_text)
-
     await update.message.reply_text("\n\n".join(results), reply_markup=MAIN_MENU)
     return ConversationHandler.END
 
@@ -131,10 +130,16 @@ async def callbacks(update: Update, context: CallbackContext):
     await query.answer()
     data = query.data
 
+    # --- MENU ---
     if data == "menu":
-        await query.edit_message_text("Выбери действие 👇", reply_markup=MAIN_MENU)
+        try:
+            if query.message and query.message.text != "Выбери действие 👇":
+                await query.edit_message_text("Выбери действие 👇", reply_markup=MAIN_MENU)
+        except BadRequest:
+            pass
         return None
 
+    # --- ADD TASK ---
     if data == "add_task":
         await query.edit_message_text("Введи дату и время:\nYYYY-MM-DD HH:MM")
         return ADD_DATE
@@ -145,13 +150,15 @@ async def callbacks(update: Update, context: CallbackContext):
         await query.edit_message_text("Введи новую дату:\nYYYY-MM-DD HH:MM")
         return POSTPONE_DATE
 
+    # --- SEARCH ---
     if data == "search":
         await query.edit_message_text("Введите запрос для поиска:")
         return SEARCH_QUERY
 
-    if data == "weather":
+    # --- WEATHER ---
+    if data in ("weather", "weather_change"):
         user_id = update.effective_user.id
-        city = await get_user_city(user_id)
+        city = await get_user_city(user_id) if data == "weather" else None
 
         if city:
             weather_data = await get_weather(city)
@@ -166,29 +173,46 @@ async def callbacks(update: Update, context: CallbackContext):
                 [InlineKeyboardButton("Выбрать другой город", callback_data="weather_change")],
                 [InlineKeyboardButton("В меню", callback_data="menu")]
             ])
-            await query.edit_message_text(text, reply_markup=kb)
+            try:
+                if query.message and query.message.text != text:
+                    await query.edit_message_text(text, reply_markup=kb)
+            except BadRequest:
+                pass
+            return None
         else:
             await query.edit_message_text("Введите город:")
             return WEATHER_CITY
 
-    if data == "weather_change":
-        await query.edit_message_text("Введите новый город:")
-        return WEATHER_CITY
-
+    # --- NEAREST TASK ---
     if data == "nearest_task":
         task = await get_nearest_task(update.effective_user.id)
         if task:
-            await query.edit_message_text(format_task(task), reply_markup=task_actions(task["id"]))
+            text = format_task(task)
+            kb = task_actions(task["id"])
         else:
-            await query.edit_message_text("Нет задач", reply_markup=MAIN_MENU)
+            text = "Нет задач"
+            kb = MAIN_MENU
+        try:
+            if query.message and query.message.text != text:
+                await query.edit_message_text(text, reply_markup=kb)
+        except BadRequest:
+            pass
         return None
 
+    # --- ALL TASKS ---
     if data == "all_tasks":
         tasks = await get_all_tasks(update.effective_user.id)
         if tasks:
-            await query.edit_message_text("Выбери задачу:", reply_markup=tasks_inline_menu(tasks))
+            text = "Выберите задачу:"
+            kb = tasks_inline_menu(tasks)
         else:
-            await query.edit_message_text("Нет задач", reply_markup=MAIN_MENU)
+            text = "Нет задач"
+            kb = MAIN_MENU
+        try:
+            if query.message and query.message.text != text:
+                await query.edit_message_text(text, reply_markup=kb)
+        except BadRequest:
+            pass
         return None
 
     return None
@@ -203,53 +227,67 @@ def main():
     async def on_startup(_):
         await init_db()
 
-    app = ApplicationBuilder().token(token).post_init(on_startup).build()
+    async def on_shutdown(_):
+        await close_db()
+
+    app = (
+        ApplicationBuilder()
+        .token(token)
+        .post_init(on_startup)
+        .post_shutdown(on_shutdown)
+        .build()
+    )
 
     # COMMANDS
     app.add_handler(CommandHandler("start", start))
 
     # ADD TASK
-    app.add_handler(ConversationHandler(
-        entry_points=[CallbackQueryHandler(callbacks, pattern="^add_task$")],
-        states={
-            ADD_DATE: [MessageHandler(filters.TEXT & ~filters.COMMAND, add_task_date)],
-            ADD_TEXT: [MessageHandler(filters.TEXT & ~filters.COMMAND, add_task_text)],
-        },
-        fallbacks=[]
-    ))
+    app.add_handler(
+        ConversationHandler(
+            entry_points=[CallbackQueryHandler(callbacks, pattern="^add_task$")],
+            states={
+                ADD_DATE: [MessageHandler(filters.TEXT & ~filters.COMMAND, add_task_date)],
+                ADD_TEXT: [MessageHandler(filters.TEXT & ~filters.COMMAND, add_task_text)],
+            },
+            fallbacks=[],
+        )
+    )
 
     # POSTPONE
-    app.add_handler(ConversationHandler(
-        entry_points=[CallbackQueryHandler(callbacks, pattern="^postpone:")],
-        states={POSTPONE_DATE: [MessageHandler(filters.TEXT & ~filters.COMMAND, postpone_date)]},
-        fallbacks=[]
-    ))
+    app.add_handler(
+        ConversationHandler(
+            entry_points=[CallbackQueryHandler(callbacks, pattern="^postpone:")],
+            states={POSTPONE_DATE: [MessageHandler(filters.TEXT & ~filters.COMMAND, postpone_date)]},
+            fallbacks=[],
+        )
+    )
 
     # SEARCH
-    app.add_handler(ConversationHandler(
-        entry_points=[CallbackQueryHandler(callbacks, pattern="^search$")],
-        states={SEARCH_QUERY: [MessageHandler(filters.TEXT & ~filters.COMMAND, search_query)]},
-        fallbacks=[]
-    ))
+    app.add_handler(
+        ConversationHandler(
+            entry_points=[CallbackQueryHandler(callbacks, pattern="^search$")],
+            states={SEARCH_QUERY: [MessageHandler(filters.TEXT & ~filters.COMMAND, search_query)]},
+            fallbacks=[],
+        )
+    )
 
     # WEATHER
-    app.add_handler(ConversationHandler(
-        entry_points=[
-            CallbackQueryHandler(callbacks, pattern="^weather$"),
-            CallbackQueryHandler(callbacks, pattern="^weather_change$")
-        ],
-        states={WEATHER_CITY: [MessageHandler(filters.TEXT & ~filters.COMMAND, weather_city)]},
-        fallbacks=[]
-    ))
+    app.add_handler(
+        ConversationHandler(
+            entry_points=[
+                CallbackQueryHandler(callbacks, pattern="^weather$"),
+                CallbackQueryHandler(callbacks, pattern="^weather_change$"),
+            ],
+            states={WEATHER_CITY: [MessageHandler(filters.TEXT & ~filters.COMMAND, weather_city)]},
+            fallbacks=[],
+        )
+    )
 
     # CALLBACKS
     app.add_handler(CallbackQueryHandler(callbacks))
 
-    import atexit
-    atexit.register(lambda: asyncio.run(close_db()))
-
     # START BOT
-    app.run_polling(close_loop=False)
+    app.run_polling()
 
 
 # ---------------- ENTRYPOINT ----------------
