@@ -127,6 +127,7 @@ async def add_task_date(update: Update, context: CallbackContext):
     return ADD_TEXT
 
 
+# ---------------- ADD TASK ----------------
 async def add_task_text(update: Update, context: CallbackContext):
     task_id = str(uuid4())
     user_id = update.effective_user.id
@@ -154,7 +155,7 @@ async def add_task_text(update: Update, context: CallbackContext):
         context.application.job_queue.run_once(
             send_task_reminder,
             delay,
-            data=task,
+            data={"task": task, "chat_id": user_id},  # ✅ передаём словарь с task и chat_id
             name=f"task_{task['id']}"
         )
 
@@ -170,30 +171,14 @@ async def add_task_text(update: Update, context: CallbackContext):
 async def postpone_date(update: Update, context: CallbackContext):
     dt = parse_datetime(update.message.text)
     if not dt:
-        await update.message.reply_text(
-            "❌ Неверный формат. Попробуйте ещё раз\n"
-            "Примеры:\n• 2026-02-10 18:30\n"
-            "• сегодня 21:00\n"
-            "• завтра 9:00",
-            reply_markup=InlineKeyboardMarkup(
-                [[InlineKeyboardButton("❌ Отмена", callback_data="cancel")],
-                 [InlineKeyboardButton("↩️ В меню", callback_data="menu")]]),
-        )
+        ...
         return POSTPONE_DATE
 
     dt_local = dt.replace(tzinfo=USER_TZ)
     dt_utc = dt_local.astimezone(timezone.utc)
 
     if dt_utc < datetime.now(timezone.utc):
-        await update.message.reply_text(
-            "❌ Нельзя вводить прошедшую дату. Попробуйте ещё раз\n"
-            "Примеры:\n• 2026-02-10 18:30\n"
-            "• сегодня 21:00\n"
-            "• завтра 9:00",
-            reply_markup=InlineKeyboardMarkup(
-                [[InlineKeyboardButton("❌ Отмена", callback_data="cancel")],
-                 [InlineKeyboardButton("↩️ В меню", callback_data="menu")]]),
-        )
+        ...
         return POSTPONE_DATE
 
     task_id = context.user_data["task_id"]
@@ -208,6 +193,7 @@ async def postpone_date(update: Update, context: CallbackContext):
 
     # ---------------- Получаем актуальные данные задачи ----------------
     task = await get_task_by_id(task_id)
+    user_id = task["user_id"]
 
     # Проверяем статус задачи — только pending
     if task and task.get("status") == "pending":
@@ -218,7 +204,7 @@ async def postpone_date(update: Update, context: CallbackContext):
         context.application.job_queue.run_once(
             send_task_reminder,
             delay,
-            data=task,
+            data={"task": task, "chat_id": user_id},  # ✅ исправлено
             name=f"task_{task['id']}"
         )
 
