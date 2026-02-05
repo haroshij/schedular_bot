@@ -1,5 +1,5 @@
-import os
 import asyncio
+import os
 from datetime import datetime, timezone, timedelta
 from uuid import uuid4
 
@@ -17,6 +17,7 @@ from telegram.ext import (
 
 from database import (
     init_db,
+    close_db,
     add_task,
     update_task_time,
     get_user_city,
@@ -30,8 +31,6 @@ from handlers.weather import get_weather
 from keyboard import MAIN_MENU, task_actions, tasks_inline_menu
 from states import ADD_DATE, ADD_TEXT, POSTPONE_DATE, SEARCH_QUERY, WEATHER_CITY
 
-# ================== Настройки ==================
-# Считаем, что пользователь вводит время в МСК
 USER_TZ = timezone(timedelta(hours=3))
 
 
@@ -132,29 +131,24 @@ async def callbacks(update: Update, context: CallbackContext):
     await query.answer()
     data = query.data
 
-    # --- MENU ---
     if data == "menu":
         await query.edit_message_text("Выбери действие 👇", reply_markup=MAIN_MENU)
         return None
 
-    # --- ADD TASK ---
     if data == "add_task":
         await query.edit_message_text("Введи дату и время:\nYYYY-MM-DD HH:MM")
         return ADD_DATE
 
-    # --- POSTPONE ---
     if data.startswith("postpone:"):
         task_id = data.split(":", 1)[1]
         context.user_data["task_id"] = task_id
         await query.edit_message_text("Введи новую дату:\nYYYY-MM-DD HH:MM")
         return POSTPONE_DATE
 
-    # --- SEARCH ---
     if data == "search":
         await query.edit_message_text("Введите запрос для поиска:")
         return SEARCH_QUERY
 
-    # --- WEATHER ---
     if data == "weather":
         user_id = update.effective_user.id
         city = await get_user_city(user_id)
@@ -181,7 +175,6 @@ async def callbacks(update: Update, context: CallbackContext):
         await query.edit_message_text("Введите новый город:")
         return WEATHER_CITY
 
-    # --- NEAREST TASK ---
     if data == "nearest_task":
         task = await get_nearest_task(update.effective_user.id)
         if task:
@@ -190,7 +183,6 @@ async def callbacks(update: Update, context: CallbackContext):
             await query.edit_message_text("Нет задач", reply_markup=MAIN_MENU)
         return None
 
-    # --- ALL TASKS ---
     if data == "all_tasks":
         tasks = await get_all_tasks(update.effective_user.id)
         if tasks:
@@ -203,20 +195,20 @@ async def callbacks(update: Update, context: CallbackContext):
 
 
 # ---------------- MAIN ----------------
-async def main():
+def main():
     token = os.getenv("TELEGRAM_TOKEN")
     if not token:
         raise RuntimeError("❌ TELEGRAM_TOKEN не найден")
 
-    app = ApplicationBuilder().token(token).build()
+    async def on_startup(_):
+        await init_db()
 
-    # --- Инициализация БД в том же loop ---
-    await init_db()
+    app = ApplicationBuilder().token(token).post_init(on_startup).build()
 
-    # --- COMMANDS ---
+    # COMMANDS
     app.add_handler(CommandHandler("start", start))
 
-    # --- ADD TASK ---
+    # ADD TASK
     app.add_handler(ConversationHandler(
         entry_points=[CallbackQueryHandler(callbacks, pattern="^add_task$")],
         states={
@@ -226,50 +218,41 @@ async def main():
         fallbacks=[]
     ))
 
-    # --- POSTPONE ---
+    # POSTPONE
     app.add_handler(ConversationHandler(
         entry_points=[CallbackQueryHandler(callbacks, pattern="^postpone:")],
-        states={
-            POSTPONE_DATE: [MessageHandler(filters.TEXT & ~filters.COMMAND, postpone_date)]
-        },
+        states={POSTPONE_DATE: [MessageHandler(filters.TEXT & ~filters.COMMAND, postpone_date)]},
         fallbacks=[]
     ))
 
-    # --- SEARCH ---
+    # SEARCH
     app.add_handler(ConversationHandler(
         entry_points=[CallbackQueryHandler(callbacks, pattern="^search$")],
-        states={
-            SEARCH_QUERY: [MessageHandler(filters.TEXT & ~filters.COMMAND, search_query)]
-        },
+        states={SEARCH_QUERY: [MessageHandler(filters.TEXT & ~filters.COMMAND, search_query)]},
         fallbacks=[]
     ))
 
-    # --- WEATHER ---
+    # WEATHER
     app.add_handler(ConversationHandler(
         entry_points=[
             CallbackQueryHandler(callbacks, pattern="^weather$"),
             CallbackQueryHandler(callbacks, pattern="^weather_change$")
         ],
-        states={
-            WEATHER_CITY: [MessageHandler(filters.TEXT & ~filters.COMMAND, weather_city)]
-        },
+        states={WEATHER_CITY: [MessageHandler(filters.TEXT & ~filters.COMMAND, weather_city)]},
         fallbacks=[]
     ))
 
-    # --- CALLBACKS ---
+    # CALLBACKS
     app.add_handler(CallbackQueryHandler(callbacks))
 
-    # --- START BOT ---
-    await app.run_polling()
+    import atexit
+    atexit.register(lambda: asyncio.run(close_db()))
+
+    # START BOT
+    app.run_polling(close_loop=False)
 
 
 # ---------------- ENTRYPOINT ----------------
 if __name__ == "__main__":
     load_dotenv()
-    try:
-        asyncio.run(main())
-    except KeyboardInterrupt:
-        print("Бот остановлен вручную")
-    except Exception as e:
-        print("Ошибка при запуске бота:", e)
-        raise
+    main()

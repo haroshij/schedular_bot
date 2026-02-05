@@ -4,20 +4,18 @@ from dotenv import load_dotenv
 from datetime import datetime
 from typing import Optional, List, Dict
 
-load_dotenv()  # Загружаем .env сразу
+load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
     raise RuntimeError("DATABASE_URL is not set")
 
-# Глобальный пул подключений к БД
 pool: Optional[asyncpg.pool.Pool] = None
 
-
-# ---------- Init ----------
 async def init_db() -> None:
     global pool
-    pool = await asyncpg.create_pool(DATABASE_URL)
+    if pool is None:
+        pool = await asyncpg.create_pool(DATABASE_URL)  # type: ignore
 
     async with pool.acquire() as conn:
         await conn.execute("""
@@ -37,7 +35,16 @@ async def init_db() -> None:
         )
         """)
 
-# ================== ЗАДАЧИ ==================
+
+# ---------------- CLOSE ----------------
+async def close_db() -> None:
+    global pool
+    if pool:
+        await pool.close()
+        pool = None
+
+
+# ================== TASKS ==================
 async def add_task(task_id: str, user_id: int, title: str, scheduled_time: datetime):
     async with pool.acquire() as conn:
         await conn.execute(
@@ -47,6 +54,7 @@ async def add_task(task_id: str, user_id: int, title: str, scheduled_time: datet
             """,
             task_id, user_id, title, scheduled_time
         )
+
 
 async def get_nearest_task(user_id: int) -> Optional[Dict]:
     async with pool.acquire() as conn:
@@ -61,6 +69,7 @@ async def get_nearest_task(user_id: int) -> Optional[Dict]:
         )
         return dict(row) if row else None
 
+
 async def get_all_tasks(user_id: int) -> List[Dict]:
     async with pool.acquire() as conn:
         rows = await conn.fetch(
@@ -73,6 +82,7 @@ async def get_all_tasks(user_id: int) -> List[Dict]:
         )
         return [dict(r) for r in rows]
 
+
 async def update_task_time(task_id: str, new_time: datetime):
     async with pool.acquire() as conn:
         await conn.execute(
@@ -83,6 +93,7 @@ async def update_task_time(task_id: str, new_time: datetime):
             """,
             new_time, task_id
         )
+
 
 async def mark_task_done(task_id: str):
     async with pool.acquire() as conn:
@@ -95,6 +106,7 @@ async def mark_task_done(task_id: str):
             task_id
         )
 
+
 async def get_task_by_id(task_id: str) -> Optional[Dict]:
     async with pool.acquire() as conn:
         row = await conn.fetchrow(
@@ -103,7 +115,8 @@ async def get_task_by_id(task_id: str) -> Optional[Dict]:
         )
         return dict(row) if row else None
 
-# ================== ПОЛЬЗОВАТЕЛИ ==================
+
+# ================== USERS ==================
 async def get_user_city(user_id: int) -> Optional[str]:
     async with pool.acquire() as conn:
         row = await conn.fetchrow(
@@ -111,6 +124,7 @@ async def get_user_city(user_id: int) -> Optional[str]:
             user_id
         )
         return row["city"] if row else None
+
 
 async def set_user_city(user_id: int, city: str):
     async with pool.acquire() as conn:
