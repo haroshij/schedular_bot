@@ -1,7 +1,7 @@
 import os
 import time
 
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 from dotenv import load_dotenv
 
@@ -40,6 +40,8 @@ from utils import parse_datetime, format_task
 from handlers.search import search_duckduckgo
 from handlers.weather import get_weather
 
+USER_TZ = timezone(timedelta(hours=3))
+
 
 # ---------------- START ----------------
 async def start(update: Update, _: CallbackContext):
@@ -63,23 +65,23 @@ async def add_task_start(update: Update, _: CallbackContext):
 async def add_task_date(update: Update, context: CallbackContext):
     dt = parse_datetime(update.message.text)
     if not dt:
-        await update.message.reply_text(
-            "❌ Неверный формат. Попробуй ещё раз"
-        )
+        await update.message.reply_text("❌ Неверный формат. Попробуй ещё раз")
         return ADD_DATE
 
-    dt = dt.replace(tzinfo=timezone.utc)
+    # считаем, что пользователь ввёл время в МСК
+    dt_local = dt.replace(tzinfo=USER_TZ)
 
-    if dt < datetime.now(timezone.utc):
+    # переводим в UTC
+    dt_utc = dt_local.astimezone(timezone.utc)
+
+    if dt_utc < datetime.now(timezone.utc):
         await update.message.reply_text(
             "❌ Нельзя вводить прошедшую дату. Попробуй ещё раз"
         )
         return ADD_DATE
 
-    context.user_data["task_time"] = dt
-    await update.message.reply_text(
-        "Теперь введи текст задачи"
-    )
+    context.user_data["task_time"] = dt_utc
+    await update.message.reply_text("Теперь введи текст задачи")
     return ADD_TEXT
 
 
@@ -252,24 +254,24 @@ async def callbacks(update: Update, context: CallbackContext):
 
     return None
 
+
 # ---------------- POSTPONE ----------------
 async def postpone_date(update: Update, context: CallbackContext):
     dt = parse_datetime(update.message.text)
     if not dt:
-        await update.message.reply_text(
-            "❌ Неверный формат. Попробуй ещё раз"
-        )
+        await update.message.reply_text("❌ Неверный формат. Попробуй ещё раз")
         return POSTPONE_DATE
 
-    dt = dt.replace(tzinfo=timezone.utc)
+    dt_local = dt.replace(tzinfo=USER_TZ)
+    dt_utc = dt_local.astimezone(timezone.utc)
 
-    if dt < datetime.now(timezone.utc):
+    if dt_utc < datetime.now(timezone.utc):
         await update.message.reply_text(
             "❌ Нельзя вводить прошедшую дату. Попробуй ещё раз"
         )
         return POSTPONE_DATE
 
-    await update_task_time(context.user_data["task_id"], dt)
+    await update_task_time(context.user_data["task_id"], dt_utc)
 
     await update.message.reply_text(
         "⏳ Время изменено",
@@ -310,6 +312,7 @@ async def weather_city(update: Update, _: CallbackContext):
 
     await update.message.reply_text(text, reply_markup=kb)
     return ConversationHandler.END
+
 
 async def start_postpone(update: Update, context: CallbackContext):
     query = update.callback_query
