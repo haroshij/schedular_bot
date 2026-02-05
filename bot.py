@@ -72,8 +72,7 @@ async def add_task_date(update: Update, context: CallbackContext):
 
     if dt < datetime.now(timezone.utc):
         await update.message.reply_text(
-            "❌ Нельзя вводить прошедшую дату. Попробуй ещё раз",
-            reply_markup=ReplyKeyboardRemove()
+            "❌ Нельзя вводить прошедшую дату. Попробуй ещё раз"
         )
         return ADD_DATE
 
@@ -258,8 +257,7 @@ async def postpone_date(update: Update, context: CallbackContext):
     dt = parse_datetime(update.message.text)
     if not dt:
         await update.message.reply_text(
-            "❌ Неверный формат. Попробуй ещё раз",
-            reply_markup=ReplyKeyboardRemove()
+            "❌ Неверный формат. Попробуй ещё раз"
         )
         return POSTPONE_DATE
 
@@ -267,15 +265,14 @@ async def postpone_date(update: Update, context: CallbackContext):
 
     if dt < datetime.now(timezone.utc):
         await update.message.reply_text(
-            "❌ Нельзя вводить прошедшую дату. Попробуй ещё раз",
-            reply_markup=ReplyKeyboardRemove()
+            "❌ Нельзя вводить прошедшую дату. Попробуй ещё раз"
         )
         return POSTPONE_DATE
 
     await update_task_time(context.user_data["task_id"], dt)
 
     await update.message.reply_text(
-        "⏳ Задача отложена",
+        "⏳ Время изменено",
         reply_markup=MAIN_MENU
     )
     return ConversationHandler.END

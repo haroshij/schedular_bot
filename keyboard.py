@@ -22,7 +22,7 @@ def task_actions(task_id: str):
     return InlineKeyboardMarkup([
         [
             InlineKeyboardButton("✅ Выполнена", callback_data=f"done:{task_id}"),
-            InlineKeyboardButton("⏳ Отложить", callback_data=f"postpone:{task_id}"),
+            InlineKeyboardButton("⏳ Изменить время", callback_data=f"postpone:{task_id}"),
         ],
         [
             InlineKeyboardButton("⬅️ В меню", callback_data="menu"),
