@@ -2,6 +2,7 @@ from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import CallbackContext
 
 from handlers.weather import get_weather
+from utils import translate_weather
 from database import set_user_city  # подключаем функцию для сохранения города
 
 
@@ -19,6 +20,7 @@ async def weather_handler(update: Update, _: CallbackContext):
     await set_user_city(user_id, city)
 
     desc = data["weather"][0]["description"]
+    desc_ru = translate_weather(desc)
     temp = data["main"]["temp"]
 
     kb = InlineKeyboardMarkup([
@@ -28,7 +30,7 @@ async def weather_handler(update: Update, _: CallbackContext):
 
     await update.message.reply_text(
         f"🌤 {city}:\n"
-        f"{desc}\n"
+        f"{desc_ru}\n"
         f"🌡 Температура: {temp}°C",
         reply_markup=kb
     )
