@@ -17,7 +17,7 @@ from states import (
     WEATHER_CITY,
 )
 from handlers.weather import get_weather
-from common import cancel_menu_kb
+from handlers.common import cancel_menu_kb
 
 
 async def callbacks(update: Update, context: CallbackContext):
