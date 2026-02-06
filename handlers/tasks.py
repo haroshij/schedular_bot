@@ -22,12 +22,6 @@ def cancel_menu_kb():
 
 
 async def add_task_date(update: Update, context: CallbackContext):
-    # Если это первый вызов (пользователь только начал вводить дату)
-    await update.message.reply_text(
-        "Введите дату и время ⏰\n\nПримеры:\n• 2026-02-10 18:30\n• сегодня 21:00\n• завтра 9:00",
-        reply_markup=cancel_menu_kb()
-    )
-
     dt = parse_datetime(update.message.text)
     if not dt:
         await update.message.reply_text(
@@ -65,7 +59,7 @@ async def add_task_text(update: Update, context: CallbackContext):
     context.application.job_queue.run_once(
         send_task_reminder,
         max(0, delay),
-        data={"task_id": task_id, "chat_id": user_id},
+        data={"task": task, "chat_id": user_id},
         name=f"task_{task_id}",
     )
 
