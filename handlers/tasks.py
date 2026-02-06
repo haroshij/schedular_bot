@@ -87,14 +87,20 @@ async def postpone_date(update: Update, context: CallbackContext):
         if job.name == f"task_{task_id}":
             job.schedule_removal()
 
-    task = await get_task_by_id(task_id)
+    task = await get_task_by_id(task_id)  # 🔑 берём обновлённую задачу
     delay = (task["scheduled_time"] - datetime.now(timezone.utc)).total_seconds()
     context.application.job_queue.run_once(
         send_task_reminder,
         max(0, delay),
-        data={"task_id": task_id, "chat_id": task["user_id"]},
+        data={
+            "task": task,  # 🔑 передаём весь task
+            "chat_id": task["user_id"]
+        },
         name=f"task_{task_id}",
     )
 
-    await update.message.reply_text("⏳ Время изменено", reply_markup=MAIN_MENU)
+    await update.message.reply_text(
+        "⏳ Время изменено",
+        reply_markup=MAIN_MENU
+    )
     return ConversationHandler.END
