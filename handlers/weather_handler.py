@@ -12,8 +12,14 @@ async def weather_handler(update: Update, _: CallbackContext):
 
     data = await get_weather(city)
 
+    kb = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔄 Другой город", callback_data="weather_change")],
+        [InlineKeyboardButton("↩️ В меню", callback_data="menu")]
+    ])
+
     if "error" in data:
-        await update.message.reply_text(f"❌ {data['error']}")
+        await update.message.reply_text(f"❌ {data['error']}",
+        reply_markup=kb)
         return
 
     # Сохраняем город в базе после успешного получения погоды
@@ -23,10 +29,7 @@ async def weather_handler(update: Update, _: CallbackContext):
     desc_ru = translate_weather(desc)
     temp = data["main"]["temp"]
 
-    kb = InlineKeyboardMarkup([
-        [InlineKeyboardButton("🔄 Другой город", callback_data="weather_change")],
-        [InlineKeyboardButton("↩️ В меню", callback_data="menu")]
-    ])
+
 
     await update.message.reply_text(
         f"🌤 {city}:\n"
