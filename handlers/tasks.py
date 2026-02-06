@@ -22,6 +22,14 @@ def cancel_menu_kb():
 
 
 async def add_task_date(update: Update, context: CallbackContext):
+    # Если это первый вызов (пользователь только начал вводить дату)
+    if "task_time" not in context.user_data:
+        await update.message.reply_text(
+            "Введите дату и время ⏰\n\nПримеры:\n• 2026-02-10 18:30\n• сегодня 21:00\n• завтра 9:00",
+            reply_markup=cancel_menu_kb()
+        )
+        return ADD_DATE
+
     dt = parse_datetime(update.message.text)
     if not dt:
         await update.message.reply_text(
