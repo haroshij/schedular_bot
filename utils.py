@@ -41,6 +41,7 @@ WEATHER_TRANSLATIONS = {
     "Showers": "Ливни",
 
     # Снег / лед
+    "Light freezing rain": "Лёгкий ледяной дождь",
     "Light snow": "Лёгкий снег",
     "Light snow, snow": "Лёгкий снег, снег",
     "Moderate snow": "Умеренный снег",
