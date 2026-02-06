@@ -16,7 +16,7 @@ async def weather_handler(update: Update, _: CallbackContext):
     temp = data["main"]["temp"]
 
     await update.message.reply_text(
-        f"🌤 Погода в {city}:\n"
+        f"🌤 {city}:\n"
         f"{desc}\n"
         f"🌡 Температура: {temp}°C"
     )
