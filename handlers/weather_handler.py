@@ -31,6 +31,6 @@ async def weather_handler(update: Update, _: CallbackContext):
     await update.message.reply_text(
         f"🌤 {city}:\n"
         f"{desc_ru}\n"
-        f"🌡 Температура: {temp}°C",
+        f"🌡 Температура: {round(temp)}°C",
         reply_markup=kb
     )

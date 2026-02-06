@@ -53,6 +53,7 @@ WEATHER_TRANSLATIONS = {
     "Sleet": "Мокрый снег",
     "Light sleet": "Лёгкий мокрый снег",
     "Rain and snow": "Дождь со снегом",
+    "Light drizzle, mist": "Лёгкая морось, туман",
 
     # Гроза
     "Thunderstorm": "Гроза",

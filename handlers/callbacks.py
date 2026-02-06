@@ -63,7 +63,7 @@ async def callbacks(update: Update, context: CallbackContext):
 
         context.user_data["task_id"] = task_id
         await query.edit_message_text(
-            "Введите новую дату и время ⏰"
+            "Введите новую дату и время ⏰\n\n"
             "Примеры:\n"
             "• 2026-02-10 18:30\n"
             "• сегодня 21:00\n"
