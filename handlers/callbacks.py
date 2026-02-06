@@ -16,7 +16,7 @@ from states import (
     SEARCH_QUERY,
     WEATHER_CITY,
 )
-from handlers.weather import get_weather
+from services.weather import get_weather
 from handlers.common import cancel_menu_kb
 
 

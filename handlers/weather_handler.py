@@ -1,7 +1,7 @@
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import CallbackContext
 
-from handlers.weather import get_weather
+from services.weather import get_weather
 from utils import translate_weather
 from database import set_user_city  # подключаем функцию для сохранения города
 
