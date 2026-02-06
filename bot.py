@@ -171,14 +171,30 @@ async def add_task_text(update: Update, context: CallbackContext):
 async def postpone_date(update: Update, context: CallbackContext):
     dt = parse_datetime(update.message.text)
     if not dt:
-        ...
+        await update.message.reply_text(
+            "❌ Неверный формат. Попробуйте ещё раз\n"
+            "Примеры:\n• 2026-02-10 18:30\n"
+            "• сегодня 21:00\n"
+            "• завтра 9:00",
+            reply_markup=InlineKeyboardMarkup(
+                [[InlineKeyboardButton("❌ Отмена", callback_data="cancel")],
+                 [InlineKeyboardButton("↩️ В меню", callback_data="menu")]])
+        )
         return POSTPONE_DATE
 
     dt_local = dt.replace(tzinfo=USER_TZ)
     dt_utc = dt_local.astimezone(timezone.utc)
 
     if dt_utc < datetime.now(timezone.utc):
-        ...
+        await update.message.reply_text(
+            "❌ Нельзя вводить прошедшую дату. Попробуйте ещё раз\n"
+            "Примеры:\n• 2026-02-10 18:30\n"
+            "• сегодня 21:00\n"
+            "• завтра 9:00",
+            reply_markup=InlineKeyboardMarkup(
+                [[InlineKeyboardButton("❌ Отмена", callback_data="cancel")],
+                 [InlineKeyboardButton("↩️ В меню", callback_data="menu")]])
+        )
         return POSTPONE_DATE
 
     task_id = context.user_data["task_id"]
