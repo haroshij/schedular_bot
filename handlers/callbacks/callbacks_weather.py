@@ -1,11 +1,11 @@
-from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
+from telegram import Update
 from telegram.ext import CallbackContext
 
 from handlers.common import cancel_menu_kb
 from states import WEATHER_CITY
 from database import get_user_city
 from services.weather_service import get_weather_with_translation
-
+from keyboard import weather_actions_kb
 
 async def handle_weather_callbacks(update: Update, _: CallbackContext, data: str):
     query = update.callback_query
@@ -26,12 +26,7 @@ async def handle_weather_callbacks(update: Update, _: CallbackContext, data: str
                     f"🌡 {round(weather['temp'])}°C"
                 )
 
-            kb = InlineKeyboardMarkup([
-                [InlineKeyboardButton("🔄 Другой город", callback_data="weather_change")],
-                [InlineKeyboardButton("↩️ В меню", callback_data="menu")]
-            ])
-
-            await query.edit_message_text(text, reply_markup=kb)
+            await query.edit_message_text(text, reply_markup=weather_actions_kb())
             return None
 
         await query.edit_message_text(

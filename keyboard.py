@@ -32,3 +32,11 @@ def tasks_inline_menu(tasks: list) -> InlineKeyboardMarkup:
         text = f"  {title}   ⏰ {format_task_date(t['scheduled_time'])}  "
         kb.append([InlineKeyboardButton(text, callback_data=f"task:{t['id']}")])
     return InlineKeyboardMarkup(kb)
+
+
+# Меню погоды
+def weather_actions_kb() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔄 Другой город", callback_data="weather_change")],
+        [InlineKeyboardButton("↩️ В меню", callback_data="menu")]
+    ])
