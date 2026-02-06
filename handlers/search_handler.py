@@ -1,6 +1,6 @@
 from telegram import Update
 from telegram.ext import CallbackContext
-from services.search import search_duckduckgo
+from services.search_service import search_duckduckgo
 from handlers.common import cancel_menu_kb
 
 

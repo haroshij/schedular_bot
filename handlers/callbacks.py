@@ -1,23 +1,19 @@
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import CallbackContext
 
-from database import (
-    get_nearest_task,
-    get_all_tasks,
-    get_task_by_id,
-    mark_task_done,
-    get_user_city,
-)
 from keyboard import MAIN_MENU, task_actions, tasks_inline_menu
-from utils import format_task, translate_weather
-from states import (
-    ADD_DATE,
-    POSTPONE_DATE,
-    SEARCH_QUERY,
-    WEATHER_CITY,
-)
-from services.weather import get_weather
+from states import ADD_DATE, POSTPONE_DATE, SEARCH_QUERY, WEATHER_CITY
 from handlers.common import cancel_menu_kb
+from database import get_user_city
+from utils import format_task
+
+from services.tasks_service import (
+    get_task,
+    get_tasks,
+    get_nearest_user_task,
+    complete_task,
+)
+from services.weather_service import get_weather_with_translation
 
 
 async def callbacks(update: Update, context: CallbackContext):
@@ -52,7 +48,7 @@ async def callbacks(update: Update, context: CallbackContext):
     # ---------- POSTPONE ----------
     if data.startswith("postpone:"):
         task_id = data.split(":", 1)[1]
-        task = await get_task_by_id(task_id)
+        task = await get_task(task_id)
 
         if not task or task["user_id"] != user_id:
             await query.edit_message_text(
@@ -85,18 +81,15 @@ async def callbacks(update: Update, context: CallbackContext):
         city = await get_user_city(user_id)
 
         if city and data == "weather":
-            weather_data = await get_weather(city)
+            weather = await get_weather_with_translation(city)
 
-            if "error" in weather_data:
-                text = f"❌ {weather_data['error']}"
+            if "error" in weather:
+                text = f"❌ {weather['error']}"
             else:
-                desc_en = weather_data["weather"][0]["description"]
-                desc = translate_weather(desc_en)
-                temp = weather_data["main"]["temp"]
                 text = (
-                    f"🌤 {city.title()}\n"
-                    f"{desc.capitalize()}\n"
-                    f"🌡 {round(temp)}°C"
+                    f"🌤 {weather['city'].title()}\n"
+                    f"{weather['description'].capitalize()}\n"
+                    f"🌡 {round(weather['temp'])}°C"
                 )
 
             kb = InlineKeyboardMarkup([
@@ -115,7 +108,7 @@ async def callbacks(update: Update, context: CallbackContext):
 
     # ---------- NEAREST TASK ----------
     if data == "nearest_task":
-        task = await get_nearest_task(user_id)
+        task = await get_nearest_user_task(user_id)
 
         if task:
             await query.edit_message_text(
@@ -131,7 +124,7 @@ async def callbacks(update: Update, context: CallbackContext):
 
     # ---------- ALL TASKS ----------
     if data == "all_tasks":
-        tasks = await get_all_tasks(user_id)
+        tasks = await get_tasks(user_id)
 
         if tasks:
             kb = InlineKeyboardMarkup(
@@ -153,7 +146,7 @@ async def callbacks(update: Update, context: CallbackContext):
     # ---------- SELECT TASK ----------
     if data.startswith("task:"):
         task_id = data.split(":", 1)[1]
-        task = await get_task_by_id(task_id)
+        task = await get_task(task_id)
 
         if not task or task["user_id"] != user_id:
             await query.edit_message_text(
@@ -171,7 +164,7 @@ async def callbacks(update: Update, context: CallbackContext):
     # ---------- DONE ----------
     if data.startswith("done:"):
         task_id = data.split(":", 1)[1]
-        task = await get_task_by_id(task_id)
+        task = await get_task(task_id)
 
         if not task or task["user_id"] != user_id:
             await query.edit_message_text(
@@ -180,7 +173,7 @@ async def callbacks(update: Update, context: CallbackContext):
             )
             return None
 
-        await mark_task_done(task_id)
+        await complete_task(task_id)
         await query.edit_message_text(
             "✅ Задача выполнена",
             reply_markup=MAIN_MENU

@@ -1,4 +1,6 @@
 import aiohttp
+from utils import translate_weather
+
 
 async def get_weather(city: str) -> dict:
     """
@@ -26,3 +28,20 @@ async def get_weather(city: str) -> dict:
         }
     except Exception as e:
         return {"error": f"Ошибка обработки данных: {e}"}
+
+
+# ------------------------------------------------------------------
+# ДОБАВЛЕННАЯ ФУНКЦИЯ (для callbacks.py)
+# ------------------------------------------------------------------
+
+async def get_weather_with_translation(city: str) -> dict:
+    data = await get_weather(city)
+    if "error" in data:
+        return data
+
+    desc_en = data["weather"][0]["description"]
+    return {
+        "city": city,
+        "description": translate_weather(desc_en),
+        "temp": data["main"]["temp"],
+    }
