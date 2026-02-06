@@ -59,7 +59,11 @@ def create_app():
                     MessageHandler(filters.TEXT & ~filters.COMMAND, add_task_text)
                 ],
             },
-            fallbacks=[CommandHandler("cancel", cancel)],
+            # fallback добавляем для кнопок "Отмена" и "В меню"
+            fallbacks=[
+                CallbackQueryHandler(cancel, pattern="^cancel$"),
+                CallbackQueryHandler(cancel, pattern="^menu$"),
+            ],
         )
     )
 
@@ -72,7 +76,10 @@ def create_app():
                     MessageHandler(filters.TEXT & ~filters.COMMAND, postpone_date)
                 ]
             },
-            fallbacks=[CallbackQueryHandler(cancel, pattern="^menu$")],
+            fallbacks=[
+                CallbackQueryHandler(cancel, pattern="^cancel$"),
+                CallbackQueryHandler(cancel, pattern="^menu$"),
+            ],
         )
     )
 
@@ -85,7 +92,10 @@ def create_app():
                     MessageHandler(filters.TEXT & ~filters.COMMAND, search_handler)
                 ]
             },
-            fallbacks=[CallbackQueryHandler(cancel, pattern="^menu$")],
+            fallbacks=[
+                CallbackQueryHandler(cancel, pattern="^cancel$"),
+                CallbackQueryHandler(cancel, pattern="^menu$"),
+            ],
         )
     )
 
@@ -101,7 +111,10 @@ def create_app():
                     MessageHandler(filters.TEXT & ~filters.COMMAND, weather_handler)
                 ]
             },
-            fallbacks=[CallbackQueryHandler(cancel, pattern="^menu$")],
+            fallbacks=[
+                CallbackQueryHandler(cancel, pattern="^cancel$"),
+                CallbackQueryHandler(cancel, pattern="^menu$"),
+            ],
         )
     )
 
