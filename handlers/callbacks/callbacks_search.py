@@ -5,7 +5,7 @@ from handlers.common import cancel_menu_kb
 from states import SEARCH_QUERY
 
 
-async def handle_search_callbacks(update: Update, context: CallbackContext, data: str):
+async def handle_search_callbacks(update: Update, _: CallbackContext, data: str):
     query = update.callback_query
 
     if data == "search":

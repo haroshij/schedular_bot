@@ -4,7 +4,7 @@ from telegram.ext import CallbackContext
 from keyboard import MAIN_MENU, task_actions, tasks_inline_menu
 from handlers.common import cancel_menu_kb
 from states import ADD_DATE, POSTPONE_DATE
-from utils import format_task
+from utils.tasks_utils import format_task
 
 from services.tasks_service import (
     get_task,

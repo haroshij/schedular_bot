@@ -3,7 +3,7 @@ from telegram.ext import CallbackContext
 
 from database import get_task_by_id, get_all_pending_tasks
 from keyboard import task_actions
-from utils import format_task
+from utils.tasks_utils import format_task
 
 
 async def send_task_reminder(context: CallbackContext):

@@ -1,5 +1,5 @@
 from uuid import uuid4
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 
 from database import (
     add_task,
@@ -9,9 +9,8 @@ from database import (
     get_nearest_task,
     mark_task_done,
 )
-from utils import parse_datetime
-
-USER_TZ = timezone(timedelta(hours=3))
+from utils.tasks_utils import parse_datetime
+from constants.time_constants import MOSCOW_TZ
 
 
 async def create_task(user_id: int, title: str, scheduled_time: datetime) -> dict:
@@ -42,7 +41,7 @@ def parse_and_validate_datetime(text: str) -> datetime | None:
     if not dt:
         return None
 
-    dt_utc = dt.replace(tzinfo=USER_TZ).astimezone(timezone.utc)
+    dt_utc = dt.replace(tzinfo=MOSCOW_TZ).astimezone(timezone.utc)
     if dt_utc < datetime.now(timezone.utc):
         return None
 

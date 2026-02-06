@@ -1,5 +1,5 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-from utils import format_task_date
+from utils.tasks_utils import format_task_date
 
 # Главное меню
 MAIN_MENU = InlineKeyboardMarkup([

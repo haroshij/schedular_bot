@@ -3,7 +3,7 @@ from telegram.ext import CallbackContext
 
 from keyboard import weather_actions_kb
 from services.weather_service import get_weather
-from utils import translate_weather
+from services.weather_service import translate_weather
 from database import set_user_city  # подключаем функцию для сохранения города
 
 

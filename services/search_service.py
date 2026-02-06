@@ -7,15 +7,16 @@ async def search_duckduckgo(query: str) -> list[str]:
     Асинхронный поиск через duckduckgo_search.
     Оборачивает синхронный DDGS().text() в executor, чтобы не блокировать цикл.
     """
-    loop = asyncio.get_event_loop()
+    ddgs = DDGS()
+    loop = asyncio.get_running_loop()
+
+    def search_ddgs():
+        return ddgs.text(query, region="wt-wt", max_results=5)
 
     try:
-        results = await loop.run_in_executor(
-            None,
-            lambda: DDGS().text(query, region="wt-wt", max_results=5)
-        )
+        results = await loop.run_in_executor(None, search_ddgs)
     except Exception as e:
-        return [f"Ошибка поиска: {e}"]
+        results = [f"Ошибка поиска: {e}"]
 
     output = []
     if results:
