@@ -40,7 +40,7 @@ async def handle_tasks_callbacks(update: Update, context: CallbackContext, data:
                 "❌ Эта задача не принадлежит вам",
                 reply_markup=MAIN_MENU
             )
-            return True
+            return None
 
         context.user_data["task_id"] = task_id
         await query.edit_message_text(
@@ -67,7 +67,7 @@ async def handle_tasks_callbacks(update: Update, context: CallbackContext, data:
                 "Нет задач",
                 reply_markup=MAIN_MENU
             )
-        return True
+        return None
 
     # ---------- ALL TASKS ----------
     if data == "all_tasks":
@@ -88,7 +88,7 @@ async def handle_tasks_callbacks(update: Update, context: CallbackContext, data:
                 "Нет задач",
                 reply_markup=MAIN_MENU
             )
-        return True
+        return None
 
     # ---------- SELECT TASK ----------
     if data.startswith("task:"):
@@ -100,13 +100,13 @@ async def handle_tasks_callbacks(update: Update, context: CallbackContext, data:
                 "❌ Эта задача не принадлежит вам",
                 reply_markup=MAIN_MENU
             )
-            return True
+            return None
 
         await query.edit_message_text(
             format_task(task),
             reply_markup=task_actions(task["id"])
         )
-        return True
+        return None
 
     # ---------- DONE ----------
     if data.startswith("done:"):
@@ -118,13 +118,13 @@ async def handle_tasks_callbacks(update: Update, context: CallbackContext, data:
                 "❌ Эта задача не принадлежит вам",
                 reply_markup=MAIN_MENU
             )
-            return True
+            return None
 
         await complete_task(task_id)
         await query.edit_message_text(
             "✅ Задача выполнена",
             reply_markup=MAIN_MENU
         )
-        return True
+        return None
 
     return None

@@ -21,7 +21,12 @@ async def add_task_date(update: Update, context: CallbackContext):
     dt_utc = parse_and_validate_datetime(update.message.text)
     if not dt_utc:
         await update.message.reply_text(
-            "❌ Неверный формат даты. Попробуйте снова:",
+            "❌ Неверный формат даты. Попробуйте снова:\n\n"
+            "Примеры:\n"
+            "• 2026-02-10 18:30\n"
+            "• сегодня 21:00\n"
+            "• завтра 9:00"
+            ,
             reply_markup=cancel_menu_kb()
         )
         return ADD_DATE

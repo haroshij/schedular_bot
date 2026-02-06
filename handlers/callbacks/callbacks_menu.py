@@ -12,6 +12,6 @@ async def handle_menu_callbacks(update: Update, _: CallbackContext, data: str):
             "Выбери действие 👇",
             reply_markup=MAIN_MENU
         )
-        return True
+        return None
 
     return None

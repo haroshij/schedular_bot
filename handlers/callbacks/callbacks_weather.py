@@ -32,7 +32,7 @@ async def handle_weather_callbacks(update: Update, _: CallbackContext, data: str
             ])
 
             await query.edit_message_text(text, reply_markup=kb)
-            return True
+            return None
 
         await query.edit_message_text(
             "Введите город:",
