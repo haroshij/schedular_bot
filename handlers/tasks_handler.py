@@ -1,19 +1,13 @@
 from datetime import datetime, timezone
 
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update
 from telegram.ext import CallbackContext, ConversationHandler
 
 from keyboard import MAIN_MENU
 from states import ADD_DATE, ADD_TEXT, POSTPONE_DATE
 from bot.jobs import send_task_reminder
+from handlers.common import cancel_menu_kb
 from services.tasks_service import create_task, change_task_time, parse_and_validate_datetime
-
-# --- Клавиатура для кнопок "В меню" и "Отмена" ---
-def cancel_menu_kb():
-    return InlineKeyboardMarkup([
-        [InlineKeyboardButton("↩️ В меню", callback_data="menu")],
-        [InlineKeyboardButton("❌ Отмена", callback_data="cancel")]
-    ])
 
 
 # --- HANDLER: Ввод даты новой задачи ---
@@ -25,8 +19,7 @@ async def add_task_date(update: Update, context: CallbackContext):
             "Примеры:\n"
             "• 2026-02-10 18:30\n"
             "• сегодня 21:00\n"
-            "• завтра 9:00"
-            ,
+            "• завтра 9:00",
             reply_markup=cancel_menu_kb()
         )
         return ADD_DATE
@@ -65,7 +58,11 @@ async def postpone_date(update: Update, context: CallbackContext):
     dt_utc = parse_and_validate_datetime(update.message.text)
     if not dt_utc:
         await update.message.reply_text(
-            "❌ Неверный формат даты. Попробуйте снова:",
+            "❌ Неверный формат даты. Попробуйте снова:\n\n"
+            "Примеры:\n"
+            "• 2026-02-10 18:30\n"
+            "• сегодня 21:00\n"
+            "• завтра 9:00",
             reply_markup=cancel_menu_kb()
         )
         return POSTPONE_DATE
