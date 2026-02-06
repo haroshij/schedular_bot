@@ -17,6 +17,7 @@ from states import (
     WEATHER_CITY,
 )
 from handlers.weather import get_weather
+from common import cancel_menu_kb
 
 
 async def callbacks(update: Update, context: CallbackContext):
@@ -43,7 +44,8 @@ async def callbacks(update: Update, context: CallbackContext):
             "Примеры:\n"
             "• 2026-02-10 18:30\n"
             "• сегодня 21:00\n"
-            "• завтра 9:00"
+            "• завтра 9:00",
+            reply_markup=cancel_menu_kb()
         )
         return ADD_DATE
 
@@ -61,14 +63,16 @@ async def callbacks(update: Update, context: CallbackContext):
 
         context.user_data["task_id"] = task_id
         await query.edit_message_text(
-            "Введите новую дату и время ⏰"
+            "Введите новую дату и время ⏰",
+            reply_markup=cancel_menu_kb()
         )
         return POSTPONE_DATE
 
     # ---------- SEARCH ----------
     if data == "search":
         await query.edit_message_text(
-            "Введите запрос для поиска:"
+            "Введите запрос для поиска:",
+            reply_markup=cancel_menu_kb()
         )
         return SEARCH_QUERY
 
@@ -100,7 +104,8 @@ async def callbacks(update: Update, context: CallbackContext):
             return None
 
         await query.edit_message_text(
-            "Введите город:"
+            "Введите город:",
+            reply_markup=cancel_menu_kb()
         )
         return WEATHER_CITY
 

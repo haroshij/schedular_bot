@@ -61,6 +61,7 @@ def create_app():
             },
             # fallback добавляем для кнопок "Отмена" и "В меню"
             fallbacks=[
+                CommandHandler("cancel", cancel),
                 CallbackQueryHandler(cancel, pattern="^cancel$"),
                 CallbackQueryHandler(cancel, pattern="^menu$"),
             ],
@@ -77,6 +78,7 @@ def create_app():
                 ]
             },
             fallbacks=[
+                CommandHandler("cancel", cancel),
                 CallbackQueryHandler(cancel, pattern="^cancel$"),
                 CallbackQueryHandler(cancel, pattern="^menu$"),
             ],
@@ -93,6 +95,7 @@ def create_app():
                 ]
             },
             fallbacks=[
+                CommandHandler("cancel", cancel),
                 CallbackQueryHandler(cancel, pattern="^cancel$"),
                 CallbackQueryHandler(cancel, pattern="^menu$"),
             ],
@@ -103,6 +106,7 @@ def create_app():
     app.add_handler(
         ConversationHandler(
             entry_points=[
+                CommandHandler("cancel", cancel),
                 CallbackQueryHandler(callbacks, pattern="^weather$"),
                 CallbackQueryHandler(callbacks, pattern="^weather_change$"),
             ],
@@ -112,6 +116,7 @@ def create_app():
                 ]
             },
             fallbacks=[
+                CommandHandler("cancel", cancel),
                 CallbackQueryHandler(cancel, pattern="^cancel$"),
                 CallbackQueryHandler(cancel, pattern="^menu$"),
             ],
