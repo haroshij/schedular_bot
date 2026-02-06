@@ -13,7 +13,7 @@ from handlers.common import start, cancel
 from handlers.tasks_handler import add_task_date, add_task_text, postpone_date
 from handlers.search_handler import search_handler
 from handlers.weather_handler import weather_handler
-from handlers.callbacks import callbacks
+from handlers.callbacks.callbacks import callbacks
 from bot.jobs import restore_jobs
 from states import (
     ADD_DATE,

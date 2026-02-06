@@ -2,9 +2,8 @@ from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import CallbackContext
 
 from keyboard import MAIN_MENU, task_actions, tasks_inline_menu
-from states import ADD_DATE, POSTPONE_DATE, SEARCH_QUERY, WEATHER_CITY
 from handlers.common import cancel_menu_kb
-from database import get_user_city
+from states import ADD_DATE, POSTPONE_DATE
 from utils import format_task
 
 from services.tasks_service import (
@@ -13,25 +12,11 @@ from services.tasks_service import (
     get_nearest_user_task,
     complete_task,
 )
-from services.weather_service import get_weather_with_translation
 
 
-async def callbacks(update: Update, context: CallbackContext):
+async def handle_tasks_callbacks(update: Update, context: CallbackContext, data: str):
     query = update.callback_query
-    if not query:
-        return None
-
-    await query.answer()
-    data = query.data
     user_id = update.effective_user.id
-
-    # ---------- MENU ----------
-    if data == "menu":
-        await query.edit_message_text(
-            "Выбери действие 👇",
-            reply_markup=MAIN_MENU
-        )
-        return None
 
     # ---------- ADD TASK ----------
     if data == "add_task":
@@ -55,7 +40,7 @@ async def callbacks(update: Update, context: CallbackContext):
                 "❌ Эта задача не принадлежит вам",
                 reply_markup=MAIN_MENU
             )
-            return None
+            return True
 
         context.user_data["task_id"] = task_id
         await query.edit_message_text(
@@ -67,44 +52,6 @@ async def callbacks(update: Update, context: CallbackContext):
             reply_markup=cancel_menu_kb()
         )
         return POSTPONE_DATE
-
-    # ---------- SEARCH ----------
-    if data == "search":
-        await query.edit_message_text(
-            "Введите запрос для поиска:",
-            reply_markup=cancel_menu_kb()
-        )
-        return SEARCH_QUERY
-
-    # ---------- WEATHER ----------
-    if data in ("weather", "weather_change"):
-        city = await get_user_city(user_id)
-
-        if city and data == "weather":
-            weather = await get_weather_with_translation(city)
-
-            if "error" in weather:
-                text = f"❌ {weather['error']}"
-            else:
-                text = (
-                    f"🌤 {weather['city'].title()}\n"
-                    f"{weather['description'].capitalize()}\n"
-                    f"🌡 {round(weather['temp'])}°C"
-                )
-
-            kb = InlineKeyboardMarkup([
-                [InlineKeyboardButton("🔄 Другой город", callback_data="weather_change")],
-                [InlineKeyboardButton("↩️ В меню", callback_data="menu")]
-            ])
-
-            await query.edit_message_text(text, reply_markup=kb)
-            return None
-
-        await query.edit_message_text(
-            "Введите город:",
-            reply_markup=cancel_menu_kb()
-        )
-        return WEATHER_CITY
 
     # ---------- NEAREST TASK ----------
     if data == "nearest_task":
@@ -120,7 +67,7 @@ async def callbacks(update: Update, context: CallbackContext):
                 "Нет задач",
                 reply_markup=MAIN_MENU
             )
-        return None
+        return True
 
     # ---------- ALL TASKS ----------
     if data == "all_tasks":
@@ -141,7 +88,7 @@ async def callbacks(update: Update, context: CallbackContext):
                 "Нет задач",
                 reply_markup=MAIN_MENU
             )
-        return None
+        return True
 
     # ---------- SELECT TASK ----------
     if data.startswith("task:"):
@@ -153,13 +100,13 @@ async def callbacks(update: Update, context: CallbackContext):
                 "❌ Эта задача не принадлежит вам",
                 reply_markup=MAIN_MENU
             )
-            return None
+            return True
 
         await query.edit_message_text(
             format_task(task),
             reply_markup=task_actions(task["id"])
         )
-        return None
+        return True
 
     # ---------- DONE ----------
     if data.startswith("done:"):
@@ -171,13 +118,13 @@ async def callbacks(update: Update, context: CallbackContext):
                 "❌ Эта задача не принадлежит вам",
                 reply_markup=MAIN_MENU
             )
-            return None
+            return True
 
         await complete_task(task_id)
         await query.edit_message_text(
             "✅ Задача выполнена",
             reply_markup=MAIN_MENU
         )
-        return None
+        return True
 
     return None
