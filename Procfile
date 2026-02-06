@@ -1,1 +1,1 @@
-bot: python app/main.py
+bot: python -m app.main
