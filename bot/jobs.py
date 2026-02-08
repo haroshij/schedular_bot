@@ -14,10 +14,11 @@ async def send_task_reminder(context: CallbackContext):
 
     task: dict = job_data["task"]
     chat_id: int = job_data["chat_id"]
+    expected_time = job_data["scheduled_time"]
 
     # Получаем актуальные данные из БД
     task_db = await get_task_by_id(task["id"])
-    if not task_db or task_db.get("status") != "pending":
+    if not task_db or task_db.get("status") != "pending" or task_db["scheduled_time"] != expected_time:
         # Задача выполнена или удалена — ничего не делаем
         return
 

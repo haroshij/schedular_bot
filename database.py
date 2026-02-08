@@ -4,21 +4,23 @@ from dotenv import load_dotenv
 from datetime import datetime
 from typing import Optional, List, Dict
 
-load_dotenv()
-
 DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
     raise RuntimeError("DATABASE_URL is not set")
 
-pool: Optional[asyncpg.pool.Pool] = None
+_pool: Optional[asyncpg.pool.Pool] = None
 
+def get_pool() -> asyncpg.Pool:
+    if _pool is None:
+        raise RuntimeError("DB pool not initialized")
+    return _pool
 
 async def init_db() -> None:
-    global pool
-    if pool is None:
-        pool = await asyncpg.create_pool(DATABASE_URL)  # type: ignore
+    global _pool
+    if _pool is None:
+        _pool = await asyncpg.create_pool(DATABASE_URL)  # type: ignore
 
-    async with pool.acquire() as conn:
+    async with get_pool().acquire() as conn:
         await conn.execute("""
         CREATE TABLE IF NOT EXISTS tasks (
             id TEXT PRIMARY KEY,
@@ -39,15 +41,15 @@ async def init_db() -> None:
 
 # ---------------- CLOSE ----------------
 async def close_db() -> None:
-    global pool
-    if pool:
-        await pool.close()
-        pool = None
+    global _pool
+    if _pool:
+        await _pool.close()
+        _pool = None
 
 
 # ================== TASKS ==================
 async def add_task(task_id: str, user_id: int, title: str, scheduled_time: datetime):
-    async with pool.acquire() as conn:
+    async with get_pool().acquire() as conn:
         await conn.execute(
             """
             INSERT INTO tasks (id, user_id, title, scheduled_time, status)
@@ -58,7 +60,7 @@ async def add_task(task_id: str, user_id: int, title: str, scheduled_time: datet
 
 
 async def get_nearest_task(user_id: int) -> Optional[Dict]:
-    async with pool.acquire() as conn:
+    async with get_pool().acquire() as conn:
         row = await conn.fetchrow(
             """
             SELECT * FROM tasks
@@ -72,7 +74,7 @@ async def get_nearest_task(user_id: int) -> Optional[Dict]:
 
 
 async def get_all_tasks(user_id: int) -> List[Dict]:
-    async with pool.acquire() as conn:
+    async with get_pool().acquire() as conn:
         rows = await conn.fetch(
             """
             SELECT * FROM tasks
@@ -85,7 +87,7 @@ async def get_all_tasks(user_id: int) -> List[Dict]:
 
 
 async def update_task_time(task_id: str, new_time: datetime):
-    async with pool.acquire() as conn:
+    async with get_pool().acquire() as conn:
         await conn.execute(
             """
             UPDATE tasks
@@ -97,7 +99,7 @@ async def update_task_time(task_id: str, new_time: datetime):
 
 
 async def mark_task_done(task_id: str):
-    async with pool.acquire() as conn:
+    async with get_pool().acquire() as conn:
         await conn.execute(
             """
             UPDATE tasks
@@ -109,7 +111,7 @@ async def mark_task_done(task_id: str):
 
 
 async def get_task_by_id(task_id: str) -> Optional[Dict]:
-    async with pool.acquire() as conn:
+    async with get_pool().acquire() as conn:
         row = await conn.fetchrow(
             "SELECT * FROM tasks WHERE id = $1",
             task_id
@@ -119,7 +121,7 @@ async def get_task_by_id(task_id: str) -> Optional[Dict]:
 
 # ================== USERS ==================
 async def get_user_city(user_id: int) -> Optional[str]:
-    async with pool.acquire() as conn:
+    async with get_pool().acquire() as conn:
         row = await conn.fetchrow(
             "SELECT city FROM users WHERE user_id = $1",
             user_id
@@ -128,7 +130,7 @@ async def get_user_city(user_id: int) -> Optional[str]:
 
 
 async def set_user_city(user_id: int, city: str):
-    async with pool.acquire() as conn:
+    async with get_pool().acquire() as conn:
         await conn.execute(
             """
             INSERT INTO users (user_id, city)
@@ -141,7 +143,7 @@ async def set_user_city(user_id: int, city: str):
 
 
 async def get_future_tasks() -> list[dict]:
-    async with pool.acquire() as conn:
+    async with get_pool().acquire() as conn:
         rows = await conn.fetch(
             """
             SELECT *
@@ -155,7 +157,7 @@ async def get_future_tasks() -> list[dict]:
 
 # Возвращает все pending задачи для всех пользователей
 async def get_all_pending_tasks() -> list[dict]:
-    async with pool.acquire() as conn:
+    async with get_pool().acquire() as conn:
         rows = await conn.fetch(
             "SELECT * FROM tasks WHERE status='pending'"
         )
