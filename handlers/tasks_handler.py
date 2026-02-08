@@ -38,6 +38,15 @@ async def add_task_text(update: Update, context: CallbackContext):
     title = update.message.text
     scheduled_time = context.user_data["task_time"]
 
+    now = datetime.now(timezone.utc)
+    if scheduled_time < now:
+        await update.message.reply_text(
+            "❌ Введённая дата уже прошла. Задача не добавлена. Пожалуйста, попробуйте снова",
+            reply_markup=MAIN_MENU
+        )
+        context.user_data.clear()
+        return ConversationHandler.END
+
     task = await create_task(user_id, title, scheduled_time)
 
     delay = (task["scheduled_time"] - datetime.now(timezone.utc)).total_seconds()
@@ -74,6 +83,7 @@ async def postpone_date(update: Update, context: CallbackContext):
     for job in context.application.job_queue.jobs():
         if job.name == f"task_{task_id}":
             job.schedule_removal()
+            break
 
     delay = (task["scheduled_time"] - datetime.now(timezone.utc)).total_seconds()
     context.application.job_queue.run_once(
