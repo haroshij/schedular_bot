@@ -17,6 +17,6 @@ stream_handler.setFormatter(formatter)
 logger.addHandler(stream_handler)
 
 # При желании можно добавить файл
-file_handler = logging.FileHandler("bot.log", encoding="utf-8")
-file_handler.setFormatter(formatter)
-logger.addHandler(file_handler)
+# file_handler = logging.FileHandler("bot.log", encoding="utf-8")
+# file_handler.setFormatter(formatter)
+# logger.addHandler(file_handler)

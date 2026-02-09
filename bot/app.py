@@ -32,7 +32,7 @@ def create_app():
     async def on_startup(app):
         logger.info("Инициализация БД...")
         await init_db()
-        logger.info("Восстановление отложенных задач...")
+        logger.info("Восстановление напоминаний по задачам...")
         await restore_jobs(app)
 
     async def on_shutdown(_):

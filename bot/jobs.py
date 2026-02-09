@@ -39,7 +39,7 @@ async def send_task_reminder(context: CallbackContext):
 
 async def restore_jobs(app):
     """Восстанавливаем все pending задачи при старте бота."""
-    logger.info("Восстановление напоминаний для всех невыполненных задач...")
+    logger.info("Формирование напоминаний для всех невыполненных задач...")
     now = datetime.now(timezone.utc)
     tasks = await get_all_pending_tasks()
 
