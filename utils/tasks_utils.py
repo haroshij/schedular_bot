@@ -1,13 +1,16 @@
 from datetime import datetime, timedelta, timezone
 from constants.time_constants import MOSCOW_TZ, RU_DAYS, RU_MONTHS
+from app.logger import logger
 
 
 def parse_datetime(text: str):
     text = text.strip().lower()
     now = datetime.now(MOSCOW_TZ)
+    logger.info('Запуск парсинга даты')
 
     # 1. Строгий формат (оставляем!)
     try:
+        logger.info('Парсинг даты прошёл успешно')
         return datetime.strptime(text, "%Y-%m-%d %H:%M")
     except ValueError:
         pass
@@ -16,6 +19,7 @@ def parse_datetime(text: str):
     if text.startswith("сегодня"):
         time_part = text.replace("сегодня", "").strip()
         try:
+            logger.info('Парсинг даты прошёл успешно')
             hour, minute = map(int, time_part.split(":"))
             return now.replace(hour=hour, minute=minute, second=0, microsecond=0)
         except ValueError:
@@ -24,6 +28,7 @@ def parse_datetime(text: str):
     if text.startswith("завтра"):
         time_part = text.replace("завтра", "").strip()
         try:
+            logger.info('Парсинг даты прошёл успешно')
             hour, minute = map(int, time_part.split(":"))
             return (now + timedelta(days=1)).replace(
                 hour=hour, minute=minute, second=0, microsecond=0
@@ -31,6 +36,7 @@ def parse_datetime(text: str):
         except ValueError:
             pass
 
+    logger.warning('Парсинг даты %s прошёл неуспешно', text)
     return None
 
 
@@ -44,6 +50,7 @@ def format_task_date(dt_or_str) -> str:
     elif isinstance(dt_or_str, datetime):
         dt = dt_or_str
     else:
+        logger.error("Ошибка при попытке приобразовать datetime | ISO-строку %s", dt_or_str)
         raise TypeError(f"Expected str or datetime, got {type(dt_or_str)}")
 
     # Приводим к московскому времени

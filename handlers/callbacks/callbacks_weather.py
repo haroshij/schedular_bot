@@ -14,7 +14,7 @@ from app.logger import logger
 async def handle_weather_callbacks(update: Update, _: CallbackContext, data: str):
     query = update.callback_query
     user_id = update.effective_user.id
-    logger.info("Пользователь %s запросил погоду | data=%s", user_id, data)
+    logger.info("Пользователь %s запросил погоду", user_id)
 
     if data in ("weather", "weather_change"):
         city = await get_user_city(user_id)
@@ -33,7 +33,7 @@ async def handle_weather_callbacks(update: Update, _: CallbackContext, data: str
                 )
 
             await query.edit_message_text(text, reply_markup=weather_actions_kb())
-            logger.info('Отправлена погода пользователяю %s | data=%s', user_id, data)
+            logger.info('Отправлена погода пользователю %s | city=%s', user_id, city)
             return None
 
         await query.edit_message_text(

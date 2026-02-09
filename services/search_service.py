@@ -1,5 +1,6 @@
 import asyncio
 from ddgs import DDGS
+from app.logger import logger
 
 
 async def search_duckduckgo(query: str) -> list[str]:
@@ -9,6 +10,7 @@ async def search_duckduckgo(query: str) -> list[str]:
     """
     ddgs = DDGS()
     loop = asyncio.get_running_loop()
+    logger.info('Запуск поиска через DDGS (Dux Distributed Global Search)...')
 
     def search_ddgs():
         return ddgs.text(query, region="wt-wt", max_results=5)
@@ -16,6 +18,7 @@ async def search_duckduckgo(query: str) -> list[str]:
     try:
         results = await loop.run_in_executor(None, search_ddgs)
     except Exception as e:
+        logger.warning('Ошибка поиска через DDGS (Dux Distributed Global Search)\n%s', e)
         return [f"Ошибка поиска: {e}"]
 
     output = []
@@ -28,6 +31,8 @@ async def search_duckduckgo(query: str) -> list[str]:
                 output.append(f"{title}\n{link}")
     else:
         output.append("Ничего не найдено.")
+
+    logger.info('Поиска через DDGS (Dux Distributed Global Search) завершён')
 
     return output
 

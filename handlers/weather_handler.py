@@ -5,6 +5,7 @@ from keyboard import weather_actions_kb
 from services.weather_service import get_weather_with_translation
 from database import set_user_city  # подключаем функцию для сохранения города
 from app.decorators import log_handler
+from app.logger import logger
 
 
 @log_handler
@@ -21,6 +22,7 @@ async def weather_handler(update: Update, _: CallbackContext):
         return ConversationHandler.END
 
     # Сохраняем город в базе после успешного получения погоды
+    logger.info("Запрос к БД по сохранению города %s для пользователя %s", city, user_id)
     await set_user_city(user_id, city)
 
     desc = data["description"]

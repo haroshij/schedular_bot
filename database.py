@@ -3,21 +3,26 @@ import asyncpg
 from datetime import datetime
 from typing import Optional, List, Dict
 
+from app.logger import logger
+
 DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
+    logger.error("Ошибка доступа к БД %s", DATABASE_URL)
     raise RuntimeError("DATABASE_URL is not set")
 
-_pool: Optional[asyncpg.pool.Pool] = None
+_pool: asyncpg.pool.Pool | None = None
 
 def get_pool() -> asyncpg.Pool:
     if _pool is None:
+        logger.error('Ошибка инициализации пула соединений с %s', DATABASE_URL)
         raise RuntimeError("DB pool not initialized")
     return _pool
 
 async def init_db() -> None:
     global _pool
     if _pool is None:
-        _pool = await asyncpg.create_pool(DATABASE_URL)  # type: ignore
+        logger.info("Создание пула соединений с %s", DATABASE_URL)
+        _pool = await asyncpg.create_pool(DATABASE_URL,min_size=2, max_size=5, timeout=10)  # type: ignore
 
     async with get_pool().acquire() as conn:
         await conn.execute("""
@@ -44,6 +49,7 @@ async def close_db() -> None:
     if _pool:
         await _pool.close()
         _pool = None
+        logger.info("Завершение всех соединений пула соединений с %s", DATABASE_URL)
 
 
 # ================== TASKS ==================
@@ -140,7 +146,7 @@ async def set_user_city(user_id: int, city: str):
             user_id, city
         )
 
-
+# ПОКА НЕ ИСПОЛЬЗУЕТСЯ
 async def get_future_tasks() -> list[dict]:
     async with get_pool().acquire() as conn:
         rows = await conn.fetch(
@@ -154,7 +160,7 @@ async def get_future_tasks() -> list[dict]:
         return [dict(r) for r in rows]
 
 
-# Возвращает все pending задачи для всех пользователей
+# Возвращает все pending задачи для всех пользователей (необходимо для формирвоания списка напоминаний)
 async def get_all_pending_tasks() -> list[dict]:
     async with get_pool().acquire() as conn:
         rows = await conn.fetch(
