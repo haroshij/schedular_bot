@@ -16,7 +16,7 @@ async def search_duckduckgo(query: str) -> list[str]:
     try:
         results = await loop.run_in_executor(None, search_ddgs)
     except Exception as e:
-        results = [f"Ошибка поиска: {e}"]
+        return [f"Ошибка поиска: {e}"]
 
     output = []
     if results:
