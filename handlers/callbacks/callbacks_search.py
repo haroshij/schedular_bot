@@ -3,8 +3,10 @@ from telegram.ext import CallbackContext
 
 from handlers.common import cancel_menu_kb
 from states import SEARCH_QUERY
+from app.decorators import log_handler
 
 
+@log_handler
 async def handle_search_callbacks(update: Update, _: CallbackContext, data: str):
     query = update.callback_query
 

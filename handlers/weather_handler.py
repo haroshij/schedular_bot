@@ -4,8 +4,10 @@ from telegram.ext import CallbackContext, ConversationHandler
 from keyboard import weather_actions_kb
 from services.weather_service import get_weather_with_translation
 from database import set_user_city  # подключаем функцию для сохранения города
+from app.decorators import log_handler
 
 
+@log_handler
 async def weather_handler(update: Update, _: CallbackContext):
     city = update.message.text.strip()
     user_id = update.effective_user.id

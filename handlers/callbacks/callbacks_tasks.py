@@ -5,7 +5,8 @@ from keyboard import MAIN_MENU, task_actions, tasks_inline_menu
 from handlers.common import cancel_menu_kb
 from states import ADD_DATE, POSTPONE_DATE
 from utils.tasks_utils import format_task
-
+from app.decorators import log_handler
+from app.logger import logger
 from services.tasks_service import (
     get_task,
     get_tasks,
@@ -14,6 +15,7 @@ from services.tasks_service import (
 )
 
 
+@log_handler
 async def handle_tasks_callbacks(update: Update, context: CallbackContext, data: str):
     query = update.callback_query
     user_id = update.effective_user.id
@@ -28,17 +30,24 @@ async def handle_tasks_callbacks(update: Update, context: CallbackContext, data:
             "• завтра 9:00",
             reply_markup=cancel_menu_kb()
         )
+        logger.info('Пользователь %s пробует создать задачу', user_id)
         return ADD_DATE
 
     # ---------- POSTPONE ----------
     if data.startswith("postpone:"):
         task_id = data.split(":", 1)[1]
         task = await get_task(task_id)
+        logger.info('Пользователь %s пробует перенести задачу %s', user_id, task_id)
 
         if not task or task["user_id"] != user_id:
             await query.edit_message_text(
                 "❌ Эта задача не принадлежит вам",
                 reply_markup=MAIN_MENU
+            )
+            logger.warning(
+                "Пользователь %s попытался перенести не свою задачу %s",
+                user_id,
+                task_id
             )
             return None
 
@@ -56,22 +65,39 @@ async def handle_tasks_callbacks(update: Update, context: CallbackContext, data:
     # ---------- NEAREST TASK ----------
     if data == "nearest_task":
         task = await get_nearest_user_task(user_id)
+        logger.info(
+            'Пользователь %s пробует получить информацию о ближайшей задаче',
+            user_id
+        )
 
         if task:
             await query.edit_message_text(
                 format_task(task),
                 reply_markup=task_actions(task["id"])
             )
+            logger.info(
+                'Пользователь %s получил информацию о ближайшей задаче %s',
+                user_id,
+                task["id"]
+            )
         else:
             await query.edit_message_text(
                 "Нет задач",
                 reply_markup=MAIN_MENU
+            )
+            logger.info(
+                'Пользователь %s не получил информацию о ближайшей задаче, так как она отсутствует',
+                user_id
             )
         return None
 
     # ---------- ALL TASKS ----------
     if data == "all_tasks":
         tasks = await get_tasks(user_id)
+        logger.info(
+            'Пользователь %s пробует получить список всех задач',
+            user_id
+        )
 
         if tasks:
             kb = InlineKeyboardMarkup(
@@ -83,11 +109,13 @@ async def handle_tasks_callbacks(update: Update, context: CallbackContext, data:
                 "Выберите задачу:",
                 reply_markup=kb
             )
+            logger.info('Пользователь %s получил список всех задач',user_id)
         else:
             await query.edit_message_text(
                 "Нет задач",
                 reply_markup=MAIN_MENU
             )
+            logger.info('Пользователь %s не получил список задач, так как задач нет', user_id)
         return None
 
     # ---------- SELECT TASK ----------
@@ -100,17 +128,28 @@ async def handle_tasks_callbacks(update: Update, context: CallbackContext, data:
                 "❌ Эта задача не принадлежит вам",
                 reply_markup=MAIN_MENU
             )
+            logger.warning(
+                "Пользователь %s попытался получить информацию о чужой задачк %s",
+                user_id,
+                task_id
+            )
             return None
 
         await query.edit_message_text(
             format_task(task),
             reply_markup=task_actions(task["id"])
         )
+        logger.info('Пользователь %s получил информацию о задаче %s', user_id, task_id)
         return None
 
     # ---------- DONE ----------
     if data.startswith("done:"):
         task_id = data.split(":", 1)[1]
+        logger.info(
+            "Пользователь %s пытается отметить задачу %s как выполненную",
+            user_id,
+            task_id
+        )
         task = await get_task(task_id)
 
         if not task or task["user_id"] != user_id:
@@ -118,12 +157,22 @@ async def handle_tasks_callbacks(update: Update, context: CallbackContext, data:
                 "❌ Эта задача не принадлежит вам",
                 reply_markup=MAIN_MENU
             )
+            logger.warning(
+                "Пользователь %s попытался отметить не свою задачу %s как выполненную",
+                user_id,
+                task_id
+            )
             return None
 
         await complete_task(task_id)
         await query.edit_message_text(
             "✅ Задача выполнена",
             reply_markup=MAIN_MENU
+        )
+        logger.info(
+            "Пользователь %s отметил задачу %s как выполненную",
+            user_id,
+            task_id
         )
         return None
 

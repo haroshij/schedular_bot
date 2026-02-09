@@ -2,8 +2,10 @@ from telegram import Update
 from telegram.ext import CallbackContext
 
 from keyboard import MAIN_MENU
+from app.decorators import log_handler
 
 
+@log_handler
 async def handle_menu_callbacks(update: Update, _: CallbackContext, data: str):
     query = update.callback_query
 

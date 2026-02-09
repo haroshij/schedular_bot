@@ -6,10 +6,15 @@ from states import WEATHER_CITY
 from database import get_user_city
 from services.weather_service import get_weather_with_translation
 from keyboard import weather_actions_kb
+from app.decorators import log_handler
+from app.logger import logger
 
+
+@log_handler
 async def handle_weather_callbacks(update: Update, _: CallbackContext, data: str):
     query = update.callback_query
     user_id = update.effective_user.id
+    logger.info("Пользователь %s запросил погоду | data=%s", user_id, data)
 
     if data in ("weather", "weather_change"):
         city = await get_user_city(user_id)
@@ -19,6 +24,7 @@ async def handle_weather_callbacks(update: Update, _: CallbackContext, data: str
 
             if "error" in weather:
                 text = f"❌ {weather['error']}"
+                logger.warning('Ошибка получения погоды: %s', weather['error'])
             else:
                 text = (
                     f"🌤 {weather['city'].title()}\n"
@@ -27,6 +33,7 @@ async def handle_weather_callbacks(update: Update, _: CallbackContext, data: str
                 )
 
             await query.edit_message_text(text, reply_markup=weather_actions_kb())
+            logger.info('Отправлена погода пользователяю %s | data=%s', user_id, data)
             return None
 
         await query.edit_message_text(

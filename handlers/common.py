@@ -2,6 +2,7 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import CallbackContext, ConversationHandler
 from keyboard import MAIN_MENU
 from app.logger import logger
+from app.decorators import log_handler
 
 def cancel_menu_kb():
     """Возвращает клавиатуру с кнопками 'В меню' и 'Отмена'"""
@@ -11,6 +12,7 @@ def cancel_menu_kb():
     ])
 
 
+@log_handler
 async def start(update: Update, _: CallbackContext):
     await update.message.reply_text(
         "Привет! Выбери действие 👇",
@@ -18,6 +20,7 @@ async def start(update: Update, _: CallbackContext):
     )
 
 
+@log_handler
 async def cancel(update: Update, context: CallbackContext):
     """
     Отмена действия: очищаем user_data и показываем главное меню.
@@ -36,6 +39,6 @@ async def cancel(update: Update, context: CallbackContext):
         )
 
     # Очистка временных данных пользователя
-    logger.info('Удалены временные данные пользователя %s', context)
+    logger.info('Удалены временные данные пользователя %s', update.effective_user.id)
     context.user_data.clear()
     return ConversationHandler.END

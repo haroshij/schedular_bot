@@ -8,9 +8,11 @@ from states import ADD_DATE, ADD_TEXT, POSTPONE_DATE
 from bot.jobs import send_task_reminder
 from handlers.common import cancel_menu_kb
 from services.tasks_service import create_task, change_task_time, parse_and_validate_datetime
+from app.decorators import log_handler
 
 
 # --- HANDLER: Ввод даты новой задачи ---
+@log_handler
 async def add_task_date(update: Update, context: CallbackContext):
     dt_utc = parse_and_validate_datetime(update.message.text)
     if not dt_utc:
@@ -33,6 +35,7 @@ async def add_task_date(update: Update, context: CallbackContext):
 
 
 # --- HANDLER: Ввод текста новой задачи ---
+@log_handler
 async def add_task_text(update: Update, context: CallbackContext):
     user_id = update.effective_user.id
     title = update.message.text
@@ -63,6 +66,7 @@ async def add_task_text(update: Update, context: CallbackContext):
 
 
 # --- HANDLER: Перенос задачи ---
+@log_handler
 async def postpone_date(update: Update, context: CallbackContext):
     dt_utc = parse_and_validate_datetime(update.message.text)
     if not dt_utc:
