@@ -21,7 +21,7 @@ def get_pool() -> asyncpg.Pool:
 async def init_db() -> None:
     global _pool
     if _pool is None:
-        logger.info("Создание пула соединений с %s", DATABASE_URL)
+        logger.debug("Создание пула соединений с %s", DATABASE_URL)
         _pool = await asyncpg.create_pool(DATABASE_URL,min_size=2, max_size=5, timeout=10)  # type: ignore
 
     async with get_pool().acquire() as conn:
@@ -49,7 +49,7 @@ async def close_db() -> None:
     if _pool:
         await _pool.close()
         _pool = None
-        logger.info("Завершение всех соединений пула соединений с %s", DATABASE_URL)
+        logger.debug("Завершение всех соединений пула соединений с %s", DATABASE_URL)
 
 
 # ================== TASKS ==================

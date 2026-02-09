@@ -1,8 +1,8 @@
 import aiohttp
 
-from constants.weather_constants import WEATHER_TRANSLATIONS
 from utils.weather_utils import validate_city
 from app.logger import logger
+from utils.weather_utils import translate_weather
 
 
 async def _get_weather(city: str) -> dict:
@@ -59,9 +59,3 @@ async def get_weather_with_translation(city: str) -> dict:
         "description": translate_weather(desc_en),
         "temp": data["main"]["temp"],
     }
-
-
-def translate_weather(desc: str) -> str:
-    """Переводит английское описание погоды на русский, если есть в словаре."""
-    desc = desc.capitalize()
-    return WEATHER_TRANSLATIONS.get(desc, desc)

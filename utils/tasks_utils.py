@@ -6,11 +6,11 @@ from app.logger import logger
 def parse_datetime(text: str):
     text = text.strip().lower()
     now = datetime.now(MOSCOW_TZ)
-    logger.info('Запуск парсинга даты')
+    logger.debug('Запуск парсинга даты')
 
     # 1. Строгий формат (оставляем!)
     try:
-        logger.info('Парсинг даты прошёл успешно')
+        logger.debug('Парсинг даты прошёл успешно')
         return datetime.strptime(text, "%Y-%m-%d %H:%M")
     except ValueError:
         pass
@@ -19,7 +19,7 @@ def parse_datetime(text: str):
     if text.startswith("сегодня"):
         time_part = text.replace("сегодня", "").strip()
         try:
-            logger.info('Парсинг даты прошёл успешно')
+            logger.debug('Парсинг даты прошёл успешно')
             hour, minute = map(int, time_part.split(":"))
             return now.replace(hour=hour, minute=minute, second=0, microsecond=0)
         except ValueError:
@@ -36,7 +36,7 @@ def parse_datetime(text: str):
         except ValueError:
             pass
 
-    logger.warning('Парсинг даты %s прошёл неуспешно', text)
+    logger.debug('Парсинг даты %s прошёл неуспешно', text)
     return None
 
 
@@ -69,3 +69,22 @@ def format_task(task: dict) -> str:
     """Форматирует задачу для показа пользователю"""
     date_str = format_task_date(task["scheduled_time"])
     return f"📝 {task['title']}\n⏰ {date_str}"
+
+
+def parse_and_validate_datetime(text: str) -> datetime | None:
+    """
+    Парсит дату из текста и проверяет, что она в будущем.
+    Возвращает datetime в UTC или None при ошибке.
+    """
+    logger.debug('Парсинг и валидация даты, введённой пользователем...')
+    dt = parse_datetime(text)
+    if not dt:
+        logger.debug('Парсинг и валидация даты завершились неуспешно')
+        return None
+
+    dt_utc = dt.replace(tzinfo=MOSCOW_TZ).astimezone(timezone.utc)
+    if dt_utc < datetime.now(timezone.utc):
+        logger.debug('Парсинг даты завершился успешно, валидация не пройдена')
+        return None
+    logger.debug('Парсинг и валидация даты завершились успешно')
+    return dt_utc

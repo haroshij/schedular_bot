@@ -7,8 +7,10 @@ from keyboard import MAIN_MENU
 from states import ADD_DATE, ADD_TEXT, POSTPONE_DATE
 from bot.jobs import send_task_reminder
 from handlers.common import cancel_menu_kb
-from services.tasks_service import create_task, change_task_time, parse_and_validate_datetime
+from services.tasks_service import create_task, change_task_time
+from utils.tasks_utils import parse_and_validate_datetime
 from app.decorators import log_handler
+from app.logger import logger
 
 
 # --- HANDLER: Ввод даты новой задачи ---
@@ -23,6 +25,11 @@ async def add_task_date(update: Update, context: CallbackContext):
             "• сегодня 21:00\n"
             "• завтра 9:00",
             reply_markup=cancel_menu_kb()
+        )
+        logger.warning(
+            'Пользователь %s ввёл неверный формат или устаревшую дату: %s',
+            update.effective_user.id,
+            update.message.text
         )
         return ADD_DATE
 
@@ -46,6 +53,10 @@ async def add_task_text(update: Update, context: CallbackContext):
         await update.message.reply_text(
             "❌ Введённая дата уже прошла. Задача не добавлена. Пожалуйста, попробуйте снова",
             reply_markup=MAIN_MENU
+        )
+        logger.warning(
+            'Пользователь %s ввёл устаревшую дату: %s',
+            scheduled_time
         )
         context.user_data.clear()
         return ConversationHandler.END
@@ -77,6 +88,11 @@ async def postpone_date(update: Update, context: CallbackContext):
             "• сегодня 21:00\n"
             "• завтра 9:00",
             reply_markup=cancel_menu_kb()
+        )
+        logger.warning(
+            'Пользователь %s ввёл неверный формат или устаревшую дату: %s',
+            update.effective_user.id,
+            update.message.text
         )
         return POSTPONE_DATE
 
