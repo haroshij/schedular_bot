@@ -7,7 +7,7 @@ from telegram.ext import (
     ConversationHandler,
     filters,
 )
-
+from app.logger import logger
 from database import init_db, close_db
 from handlers.common import start, cancel
 from handlers.tasks_handler import add_task_date, add_task_text, postpone_date
@@ -30,11 +30,15 @@ def create_app():
         raise RuntimeError("TELEGRAM_TOKEN not set")
 
     async def on_startup(app):
+        logger.info("Инициализация БД...")
         await init_db()
+        logger.info("Восстановление отложенных задач...")
         await restore_jobs(app)
 
     async def on_shutdown(_):
+        logger.info("Закрытие соединений с БД...")
         await close_db()
+        logger.info("Бот остановлен")
 
     app = (
         ApplicationBuilder()
