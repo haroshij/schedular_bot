@@ -106,7 +106,6 @@ def create_app():
     app.add_handler(
         ConversationHandler(
             entry_points=[
-                CommandHandler("cancel", cancel),
                 CallbackQueryHandler(callbacks, pattern="^weather$"),
                 CallbackQueryHandler(callbacks, pattern="^weather_change$"),
             ],
