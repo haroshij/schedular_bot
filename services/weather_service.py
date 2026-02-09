@@ -9,7 +9,7 @@ async def _get_weather(city: str) -> dict:
     Получаем погоду через wttr.in (без API ключа, работает на Railway).
     Возвращает словарь с ключами 'weather' и 'main' или 'error'.
     """
-    url = f"http://wttr.in/{city}?format=j1"
+    url = f"https://wttr.in/{city}?format=j1"
 
     async with aiohttp.ClientSession() as session:
         try:

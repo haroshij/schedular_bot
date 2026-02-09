@@ -30,6 +30,7 @@ WEATHER_TRANSLATIONS = {
     "Light freezing rain": "Лёгкий ледяной дождь",
     "Light snow": "Лёгкий снег",
     "Light snow, snow": "Лёгкий снег, снег",
+    "Light snow shower": "Лёгкий снежный дождь",
     "Moderate snow": "Умеренный снег",
     "Heavy snow": "Сильный снег",
     "Snow": "Снег",
