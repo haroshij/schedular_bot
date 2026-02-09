@@ -36,6 +36,6 @@ async def cancel(update: Update, context: CallbackContext):
         )
 
     # Очистка временных данных пользователя
-    logger.info('Удалены временные данные пользователя %s', context.user_data.user_id)
+    logger.info('Удалены временные данные пользователя %s', context)
     context.user_data.clear()
     return ConversationHandler.END
