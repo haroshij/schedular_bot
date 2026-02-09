@@ -1,5 +1,5 @@
 from telegram import Update
-from telegram.ext import CallbackContext
+from telegram.ext import CallbackContext, ConversationHandler
 
 from keyboard import weather_actions_kb
 from services.weather_service import get_weather_with_translation
@@ -16,7 +16,7 @@ async def weather_handler(update: Update, _: CallbackContext):
         await update.message.reply_text(
             f"❌ {data['error']}",
             reply_markup=weather_actions_kb())
-        return
+        return ConversationHandler.END
 
     # Сохраняем город в базе после успешного получения погоды
     await set_user_city(user_id, city)
@@ -30,3 +30,5 @@ async def weather_handler(update: Update, _: CallbackContext):
         f"🌡 Температура: {round(temp)}°C",
         reply_markup=weather_actions_kb()
     )
+
+    return ConversationHandler.END
