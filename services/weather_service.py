@@ -4,7 +4,7 @@ from constants.weather_constants import WEATHER_TRANSLATIONS
 from utils.weather_utils import validate_city
 
 
-async def get_weather(city: str) -> dict:
+async def _get_weather(city: str) -> dict:
     """
     Получаем погоду через wttr.in (без API ключа, работает на Railway).
     Возвращает словарь с ключами 'weather' и 'main' или 'error'.
@@ -40,7 +40,7 @@ async def get_weather_with_translation(city: str) -> dict:
     if not validate_city(city):
         return {"error": "Некорректное название города"}
 
-    data = await get_weather(city)
+    data = await _get_weather(city)
     if "error" in data:
         return data
 
