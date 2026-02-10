@@ -12,7 +12,7 @@ async def search_duckduckgo(query: str) -> list[str]:
     loop = asyncio.get_running_loop()
     logger.info('Запуск поиска через DDGS (Dux Distributed Global Search)...')
 
-    def search_ddgs():
+    def search_ddgs():  # pragma: no cover
         return ddgs.text(query, region="wt-wt", max_results=5)
 
     try:
@@ -45,5 +45,5 @@ async def main():
         print(r, "\n")
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     asyncio.run(main())

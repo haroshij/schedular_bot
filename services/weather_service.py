@@ -17,8 +17,8 @@ async def _get_weather(city: str) -> dict:
         try:
             async with session.get(url) as resp:
                 if resp.status != 200:
+                    logger.warning('Ошибка получения погоды с %s. Статус: %s', url, resp.status)
                     return {"error": f"Ошибка получения погоды ({resp.status})"}
-                logger.warning('Ошибка получения погоды с %s. Статус: %s', url, resp.status)
                 data = await resp.json()
         except Exception as e:
             logger.warning('Ошибка подключения к %s\n%s', url, e)
