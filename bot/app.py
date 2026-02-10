@@ -23,47 +23,89 @@ from states import (
     WEATHER_CITY,
 )
 
+"""
+Модуль инициализации и настройки Telegram бота.
+
+Здесь создаётся экземпляр бота с помощью ApplicationBuilder.
+Выполняются:
+- Настройка токена из переменных окружения
+- Инициализация базы данных при старте
+- Восстановление отложенных задач
+- Добавление хендлеров команд, callback и разговоров
+- Логирование всех этапов работы бота
+"""
+
 
 def create_app():
+    """Создаёт и конфигурирует экземпляр Telegram бота.
+
+    Основные шаги:
+        1. Получение токена из переменных окружения.
+        2. Настройка асинхронных функций при запуске и остановке бота:
+            - on_startup: инициализация БД, восстановление задач
+            - on_shutdown: закрытие соединений с БД, лог остановки
+        3. Создание ApplicationBuilder и установка функций startup/shutdown.
+        4. Регистрация хендлеров:
+            - Команды (/start)
+            - Добавление задач (add_task)
+            - Перенос даты задач (postpone)
+            - Поиск (search)
+            - Погода (weather)
+            - Обработчик всех callback запросов
+        5. Возврат готового объекта бота для запуска.
+
+    Returns:
+        telegram.ext.Application: Конфигурированный экземпляр бота.
+
+    Raises:
+        RuntimeError: Если TELEGRAM_TOKEN не установлен в переменных окружения.
+    """
+    # Получаем токен из переменных окружения
     token = os.getenv("TELEGRAM_TOKEN")
     if not token:
-        raise RuntimeError("TELEGRAM_TOKEN not set")
+        raise RuntimeError("TELEGRAM_TOKEN не установлен в переменных окружения")
 
+    # Асинхронная функция, выполняемая при старте бота
     async def on_startup(app):
+        # Логируем начало инициализации БД
         logger.info("Инициализация БД...")
-        await init_db()
+        await init_db()  # Подключаемся к БД
+        # Восстанавливаем запланированные задачи из БД
         logger.info("Восстановление напоминаний по задачам...")
         await restore_jobs(app)
 
+    # Асинхронная функция, выполняемая при остановке бота
     async def on_shutdown(_):
+        # Логируем закрытие соединений с БД
         logger.info("Закрытие соединений с БД...")
-        await close_db()
+        await close_db()  # Закрываем соединения с БД
         logger.info("Бот остановлен")
 
+    # Создаём экземпляр приложения бота
     app = (
         ApplicationBuilder()
-        .token(token)
-        .post_init(on_startup)
-        .post_shutdown(on_shutdown)
-        .build()
+        .token(token)  # Устанавливаем токен
+        .post_init(on_startup)  # Функция при старте
+        .post_shutdown(on_shutdown)  # Функция при остановке
+        .build()  # Создаём объект Application
     )
 
     # ---------- COMMANDS ----------
+    # Хендлер для команды /start
     app.add_handler(CommandHandler("start", start))
 
     # ---------- ADD TASK ----------
+    # Разговор для добавления новой задачи
     app.add_handler(
         ConversationHandler(
             entry_points=[CallbackQueryHandler(callbacks, pattern="^add_task$")],
             states={
-                ADD_DATE: [
-                    MessageHandler(filters.TEXT & ~filters.COMMAND, add_task_date)
-                ],
-                ADD_TEXT: [
-                    MessageHandler(filters.TEXT & ~filters.COMMAND, add_task_text)
-                ],
+                # Ожидаем ввод даты задачи
+                ADD_DATE: [MessageHandler(filters.TEXT & ~filters.COMMAND, add_task_date)],
+                # Ожидаем ввод текста задачи
+                ADD_TEXT: [MessageHandler(filters.TEXT & ~filters.COMMAND, add_task_text)],
             },
-            # fallback добавляем для кнопок "Отмена" и "В меню"
+            # fallbacks для отмены или возврата в меню
             fallbacks=[
                 CommandHandler("cancel", cancel),
                 CallbackQueryHandler(cancel, pattern="^cancel$"),
@@ -73,6 +115,7 @@ def create_app():
     )
 
     # ---------- POSTPONE ----------
+    # Разговор для переноса даты задачи
     app.add_handler(
         ConversationHandler(
             entry_points=[CallbackQueryHandler(callbacks, pattern="^postpone:")],
@@ -90,6 +133,7 @@ def create_app():
     )
 
     # ---------- SEARCH ----------
+    # Разговор для поиска задач
     app.add_handler(
         ConversationHandler(
             entry_points=[CallbackQueryHandler(callbacks, pattern="^search$")],
@@ -107,6 +151,7 @@ def create_app():
     )
 
     # ---------- WEATHER ----------
+    # Разговор для получения прогноза погоды
     app.add_handler(
         ConversationHandler(
             entry_points=[
@@ -127,6 +172,8 @@ def create_app():
     )
 
     # ---------- CALLBACKS ----------
+    # Универсальный хендлер для всех callback-запросов
     app.add_handler(CallbackQueryHandler(callbacks))
 
+    # Возвращаем готовый объект бота
     return app

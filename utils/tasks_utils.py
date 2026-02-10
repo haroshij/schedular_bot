@@ -61,8 +61,10 @@ def format_task_date(dt_or_str) -> str:
     day_name = RU_DAYS[dt_local.weekday()]
     month_name = RU_MONTHS[dt_local.month - 1]
 
-    return f"{day_name}, {dt_local.day:02d} {month_name} {
-    dt_local.year} {dt_local.hour:02d}:{dt_local.minute:02d}"
+    return (
+        f"{day_name}, {dt_local.day:02d} {month_name} "
+        f"{dt_local.year} {dt_local.hour:02d}:{dt_local.minute:02d}"
+    )
 
 
 def format_task(task: dict) -> str:

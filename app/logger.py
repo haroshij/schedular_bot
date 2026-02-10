@@ -1,22 +1,35 @@
 import logging
 import sys
 
-# Создаём логгер
-logger = logging.getLogger("schedular_bot")
-logger.setLevel(logging.INFO)  # DEBUG для разработки, INFO для продакшена
+"""
+Модуль для настройки логирования бота.
 
-# Формат логов
+Логирование выполняется через стандартный модуль logging.
+Можно менять уровень логов, формат, а также вывод в консоль и/или файл.
+
+Использование:
+    from app.logger import logger
+    logger.info("Сообщение для лога")
+"""
+
+# Создаём объект логгера для нашего бота с уникальным именем
+logger = logging.getLogger("schedular_bot")  # Имя логгера, чтобы различать источники логов
+
+# Устанавливаем уровень логирования
+logger.setLevel(logging.INFO)
+
+# Создаём форматтер для логов, чтобы сообщения были читабельными
 formatter = logging.Formatter(
-    "%(asctime)s | %(levelname)s | %(name)s | %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S"
+    "%(asctime)s | %(levelname)s | %(name)s | %(message)s",  # Формат сообщения
+    datefmt="%Y-%m-%d %H:%M:%S"  # Формат времени
 )
 
-# Поток в stdout
+# Создаём обработчик, который выводит логи в консоль (stdout)
 stream_handler = logging.StreamHandler(sys.stdout)
-stream_handler.setFormatter(formatter)
-logger.addHandler(stream_handler)
+stream_handler.setFormatter(formatter)  # Применяем форматтер к обработчику
+logger.addHandler(stream_handler)  # Добавляем обработчик к логгеру
 
-# При желании можно добавить файл
+# Можно раскомментировать, если нужен лог-файл
 # file_handler = logging.FileHandler("bot.log", encoding="utf-8")
-# file_handler.setFormatter(formatter)
-# logger.addHandler(file_handler)
+# file_handler.setFormatter(formatter)  # Применяем форматтер к файловому обработчику
+# logger.addHandler(file_handler)  # Добавляем файловый обработчик к логгеру
