@@ -39,10 +39,10 @@ async def callbacks(update: Update, context: CallbackContext):
 
     # Последовательно пробуем обработать callback всеми зарегистрированными обработчиками
     for handler in (
-            handle_menu_callbacks,
-            handle_tasks_callbacks,
-            handle_weather_callbacks,
-            handle_search_callbacks,
+        handle_menu_callbacks,
+        handle_tasks_callbacks,
+        handle_weather_callbacks,
+        handle_search_callbacks,
     ):
         # Передаем update, context и data в обработчик
         result = await handler(update, context, data)

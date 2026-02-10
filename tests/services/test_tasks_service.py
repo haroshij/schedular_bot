@@ -21,9 +21,9 @@ import sys
 # Если не подменить database заранее, Python попытается импортировать
 # реальный модуль database, что приведёт к ошибке.
 mock_database = AsyncMock()
-sys.modules['database'] = mock_database
+sys.modules["database"] = mock_database
 
-from services.tasks_service import (
+from services.tasks_service import (  # noqa: E402
     create_task,
     change_task_time,
     get_task,
@@ -53,8 +53,14 @@ async def test_create_task():
     }
 
     # Мокаем функции database внутри tasks_service
-    with patch("services.tasks_service.add_task", new_callable=AsyncMock) as add_task_mock, \
-            patch("services.tasks_service.get_task_by_id", new_callable=AsyncMock) as get_task_mock:
+    with (
+        patch(
+            "services.tasks_service.add_task", new_callable=AsyncMock
+        ) as add_task_mock,
+        patch(
+            "services.tasks_service.get_task_by_id", new_callable=AsyncMock
+        ) as get_task_mock,
+    ):
         get_task_mock.return_value = fake_task
 
         result = await create_task(
@@ -88,8 +94,14 @@ async def test_change_task_time():
         "scheduled_time": new_time,
     }
 
-    with patch("services.tasks_service.update_task_time", new_callable=AsyncMock) as update_mock, \
-            patch("services.tasks_service.get_task_by_id", new_callable=AsyncMock) as get_task_mock:
+    with (
+        patch(
+            "services.tasks_service.update_task_time", new_callable=AsyncMock
+        ) as update_mock,
+        patch(
+            "services.tasks_service.get_task_by_id", new_callable=AsyncMock
+        ) as get_task_mock,
+    ):
         get_task_mock.return_value = fake_task
 
         result = await change_task_time("task-id", new_time)
@@ -155,7 +167,9 @@ async def test_get_nearest_user_task():
     """
     fake_task = {"id": "nearest"}
 
-    with patch("services.tasks_service.get_nearest_task", new_callable=AsyncMock) as mock:
+    with patch(
+        "services.tasks_service.get_nearest_task", new_callable=AsyncMock
+    ) as mock:
         mock.return_value = fake_task
 
         result = await get_nearest_user_task(user_id=7)

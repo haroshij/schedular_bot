@@ -6,13 +6,16 @@ from constants.keyboard_constants import MAX_TASK_LENGTH
 # MAIN_MENU — это InlineKeyboardMarkup, который отображает основное меню бота:
 # - Каждая кнопка имеет текст и callback_data, который используется в обработчике callback_query
 # - Кнопки расположены в отдельных рядах (списках)
-MAIN_MENU = InlineKeyboardMarkup([
-    [InlineKeyboardButton("➕ Добавить задачу", callback_data="add_task")],
-    [InlineKeyboardButton("⏳ Ближайшая задача", callback_data="nearest_task")],
-    [InlineKeyboardButton("📋 Все задачи", callback_data="all_tasks")],
-    [InlineKeyboardButton("🔎 Поиск", callback_data="search")],
-    [InlineKeyboardButton("🌤 Погода", callback_data="weather")]
-])
+MAIN_MENU = InlineKeyboardMarkup(
+    [
+        [InlineKeyboardButton("➕ Добавить задачу", callback_data="add_task")],
+        [InlineKeyboardButton("⏳ Ближайшая задача", callback_data="nearest_task")],
+        [InlineKeyboardButton("📋 Все задачи", callback_data="all_tasks")],
+        [InlineKeyboardButton("🔎 Поиск", callback_data="search")],
+        [InlineKeyboardButton("🌤 Погода", callback_data="weather")],
+    ]
+)
+
 
 # Кнопки для действий с конкретной задачей
 def task_actions(task_id: str) -> InlineKeyboardMarkup:
@@ -40,7 +43,7 @@ def task_actions(task_id: str) -> InlineKeyboardMarkup:
     kb = [
         [InlineKeyboardButton("✅ Выполнена", callback_data=f"done:{task_id}")],
         [InlineKeyboardButton("⏰ Перенести", callback_data=f"postpone:{task_id}")],
-        [InlineKeyboardButton("↩️ В меню", callback_data="menu")]
+        [InlineKeyboardButton("↩️ В меню", callback_data="menu")],
     ]
     return InlineKeyboardMarkup(kb)
 
@@ -73,10 +76,10 @@ def tasks_inline_menu(tasks: list) -> InlineKeyboardMarkup:
     """
     kb = []
     for t in tasks:
-        if len(t['title']) > MAX_TASK_LENGTH:
+        if len(t["title"]) > MAX_TASK_LENGTH:
             title = f"{t['title'][:MAX_TASK_LENGTH]}..."
         else:
-            title = t['title']
+            title = t["title"]
         # Формируем текст кнопки с названием и временем задачи
         text = f"  {title}   ⏰ {format_task_date(t['scheduled_time'])}  "
         kb.append([InlineKeyboardButton(text, callback_data=f"task:{t['id']}")])
@@ -103,7 +106,9 @@ def weather_actions_kb() -> InlineKeyboardMarkup:
     Returns:
         InlineKeyboardMarkup: Inline клавиатура для действий с погодой
     """
-    return InlineKeyboardMarkup([
-        [InlineKeyboardButton("🔄 Другой город", callback_data="weather_change")],
-        [InlineKeyboardButton("↩️ В меню", callback_data="menu")]
-    ])
+    return InlineKeyboardMarkup(
+        [
+            [InlineKeyboardButton("🔄 Другой город", callback_data="weather_change")],
+            [InlineKeyboardButton("↩️ В меню", callback_data="menu")],
+        ]
+    )

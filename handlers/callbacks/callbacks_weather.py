@@ -42,7 +42,7 @@ async def handle_weather_callbacks(update: Update, _: CallbackContext, data: str
 
             if "error" in weather:
                 text = f"❌ {weather['error']}"
-                logger.warning('Ошибка получения погоды: %s', weather['error'])
+                logger.warning("Ошибка получения погоды: %s", weather["error"])
             else:
                 text = (
                     f"🌤 {weather['city'].title()}\n"
@@ -52,14 +52,11 @@ async def handle_weather_callbacks(update: Update, _: CallbackContext, data: str
 
             # Отправляем информацию о погоде пользователю
             await query.edit_message_text(text, reply_markup=weather_actions_kb())
-            logger.info('Отправлена погода пользователю %s | city=%s', user_id, city)
+            logger.info("Отправлена погода пользователю %s | city=%s", user_id, city)
             return None
 
         # Если города нет, или меняем город — просим ввести
-        await query.edit_message_text(
-            "Введите город:",
-            reply_markup=cancel_menu_kb()
-        )
+        await query.edit_message_text("Введите город:", reply_markup=cancel_menu_kb())
         return WEATHER_CITY
 
     return None

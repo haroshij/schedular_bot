@@ -48,27 +48,26 @@ async def handle_tasks_callbacks(update: Update, context: CallbackContext, data:
             "• 2026-02-10 18:30\n"
             "• сегодня 21:00\n"
             "• завтра 9:00",
-            reply_markup=cancel_menu_kb()
+            reply_markup=cancel_menu_kb(),
         )
-        logger.info('Пользователь %s пробует создать задачу', user_id)
+        logger.info("Пользователь %s пробует создать задачу", user_id)
         return ADD_DATE
 
     # postpone
     if data.startswith("postpone:"):
         task_id = data.split(":", 1)[1]  # Получаем ID задачи
         task = await get_task(task_id)
-        logger.info('Пользователь %s пробует перенести задачу %s', user_id, task_id)
+        logger.info("Пользователь %s пробует перенести задачу %s", user_id, task_id)
 
         # Проверяем принадлежность задачи пользователю
         if not task or task["user_id"] != user_id:
             await query.edit_message_text(
-                "❌ Эта задача не принадлежит вам",
-                reply_markup=MAIN_MENU
+                "❌ Эта задача не принадлежит вам", reply_markup=MAIN_MENU
             )
             logger.warning(
                 "Пользователь %s попытался перенести не свою задачу %s",
                 user_id,
-                task_id
+                task_id,
             )
             return None
 
@@ -79,7 +78,7 @@ async def handle_tasks_callbacks(update: Update, context: CallbackContext, data:
             "• 2026-02-10 18:30\n"
             "• сегодня 21:00\n"
             "• завтра 9:00",
-            reply_markup=cancel_menu_kb()
+            reply_markup=cancel_menu_kb(),
         )
         return POSTPONE_DATE
 
@@ -87,57 +86,42 @@ async def handle_tasks_callbacks(update: Update, context: CallbackContext, data:
     if data == "nearest_task":
         task = await get_nearest_user_task(user_id)
         logger.info(
-            'Пользователь %s пробует получить информацию о ближайшей задаче',
-            user_id
+            "Пользователь %s пробует получить информацию о ближайшей задаче", user_id
         )
 
         if task:
             await query.edit_message_text(
-                format_task(task),
-                reply_markup=task_actions(task["id"])
+                format_task(task), reply_markup=task_actions(task["id"])
             )
             logger.info(
-                'Пользователь %s получил информацию о ближайшей задаче %s',
+                "Пользователь %s получил информацию о ближайшей задаче %s",
                 user_id,
-                task["id"]
+                task["id"],
             )
         else:
-            await query.edit_message_text(
-                "Нет задач",
-                reply_markup=MAIN_MENU
-            )
+            await query.edit_message_text("Нет задач", reply_markup=MAIN_MENU)
             logger.info(
-                'Пользователь %s не получил информацию о ближайшей задаче, так как она отсутствует',
-                user_id
+                "Пользователь %s не получил информацию о ближайшей задаче, так как она отсутствует",
+                user_id,
             )
         return None
 
     # all tasks
     if data == "all_tasks":
         tasks = await get_tasks(user_id)
-        logger.info(
-            'Пользователь %s пробует получить список всех задач',
-            user_id
-        )
+        logger.info("Пользователь %s пробует получить список всех задач", user_id)
 
         if tasks:
             kb = InlineKeyboardMarkup(
-                tasks_inline_menu(tasks).inline_keyboard + (
-                    (InlineKeyboardButton("↩️ В меню", callback_data="menu"),),
-                )
+                tasks_inline_menu(tasks).inline_keyboard
+                + ((InlineKeyboardButton("↩️ В меню", callback_data="menu"),),)
             )
-            await query.edit_message_text(
-                "Выберите задачу:",
-                reply_markup=kb
-            )
-            logger.info('Пользователь %s получил список всех задач', user_id)
+            await query.edit_message_text("Выберите задачу:", reply_markup=kb)
+            logger.info("Пользователь %s получил список всех задач", user_id)
         else:
-            await query.edit_message_text(
-                "Нет задач",
-                reply_markup=MAIN_MENU
-            )
+            await query.edit_message_text("Нет задач", reply_markup=MAIN_MENU)
             logger.info(
-                'Пользователь %s не получил список задач, так как задач нет', user_id
+                "Пользователь %s не получил список задач, так как задач нет", user_id
             )
         return None
 
@@ -148,21 +132,19 @@ async def handle_tasks_callbacks(update: Update, context: CallbackContext, data:
 
         if not task or task["user_id"] != user_id:
             await query.edit_message_text(
-                "❌ Эта задача не принадлежит вам",
-                reply_markup=MAIN_MENU
+                "❌ Эта задача не принадлежит вам", reply_markup=MAIN_MENU
             )
             logger.warning(
                 "Пользователь %s попытался получить информацию о чужой задаче %s",
                 user_id,
-                task_id
+                task_id,
             )
             return None
 
         await query.edit_message_text(
-            format_task(task),
-            reply_markup=task_actions(task["id"])
+            format_task(task), reply_markup=task_actions(task["id"])
         )
-        logger.info('Пользователь %s получил информацию о задаче %s', user_id, task_id)
+        logger.info("Пользователь %s получил информацию о задаче %s", user_id, task_id)
         return None
 
     # done
@@ -171,32 +153,26 @@ async def handle_tasks_callbacks(update: Update, context: CallbackContext, data:
         logger.info(
             "Пользователь %s пытается отметить задачу %s как выполненную",
             user_id,
-            task_id
+            task_id,
         )
         task = await get_task(task_id)
 
         if not task or task["user_id"] != user_id:
             await query.edit_message_text(
-                "❌ Эта задача не принадлежит вам",
-                reply_markup=MAIN_MENU
+                "❌ Эта задача не принадлежит вам", reply_markup=MAIN_MENU
             )
             logger.warning(
                 "Пользователь %s попытался отметить не свою задачу %s как выполненную",
                 user_id,
-                task_id
+                task_id,
             )
             return None
 
         # Отмечаем задачу как выполненную
         await complete_task(task_id)
-        await query.edit_message_text(
-            "✅ Задача выполнена",
-            reply_markup=MAIN_MENU
-        )
+        await query.edit_message_text("✅ Задача выполнена", reply_markup=MAIN_MENU)
         logger.info(
-            "Пользователь %s отметил задачу %s как выполненную",
-            user_id,
-            task_id
+            "Пользователь %s отметил задачу %s как выполненную", user_id, task_id
         )
         return None
 

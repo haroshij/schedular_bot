@@ -40,7 +40,11 @@ async def send_task_reminder(context: CallbackContext):
     try:
         task_db = await get_task_by_id(task["id"])
         # Проверка статуса задачи и времени выполнения
-        if not task_db or task_db.get("status") != "pending" or task_db["scheduled_time"] != expected_time:
+        if (
+            not task_db
+            or task_db.get("status") != "pending"
+            or task_db["scheduled_time"] != expected_time
+        ):
             logger.info("Задача %s уже выполнена или удалена", task["id"])
             return
 
@@ -49,14 +53,16 @@ async def send_task_reminder(context: CallbackContext):
 
         # Отправляем сообщение пользователю с кнопками действий
         await context.bot.send_message(
-            chat_id=chat_id,
-            text=text,
-            reply_markup=task_actions(task_db["id"])
+            chat_id=chat_id, text=text, reply_markup=task_actions(task_db["id"])
         )
-        logger.info("Напоминание отправлено пользователю %s для задачи %s", chat_id, task["id"])
+        logger.info(
+            "Напоминание отправлено пользователю %s для задачи %s", chat_id, task["id"]
+        )
     except Exception as e:
         # Логируем исключение, чтобы не потерять ошибку
-        logger.exception("Ошибка при отправке напоминания для задачи %s/n%s", task["id"], e)
+        logger.exception(
+            "Ошибка при отправке напоминания для задачи %s\n%s", task["id"], e
+        )
 
 
 async def restore_jobs(app):

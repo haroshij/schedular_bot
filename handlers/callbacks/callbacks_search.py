@@ -30,8 +30,7 @@ async def handle_search_callbacks(update: Update, _: CallbackContext, data: str)
     if data == "search":
         # Редактируем сообщение с запросом ввода
         await query.edit_message_text(
-            "Введите запрос для поиска:",
-            reply_markup=cancel_menu_kb()
+            "Введите запрос для поиска:", reply_markup=cancel_menu_kb()
         )
         return SEARCH_QUERY
 

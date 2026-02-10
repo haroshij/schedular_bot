@@ -36,7 +36,7 @@ async def create_task(user_id: int, title: str, scheduled_time: datetime) -> dic
     task_id = str(uuid4())
 
     # Логируем обращение к базе данных
-    logger.debug('Запрос к БД для создания задачи пользователем %s', user_id)
+    logger.debug("Запрос к БД для создания задачи пользователем %s", user_id)
 
     # Сохраняем задачу в базе данных
     await add_task(task_id, user_id, title, scheduled_time)
@@ -64,7 +64,7 @@ async def change_task_time(task_id: str, new_time: datetime) -> dict:
         dict: Обновлённый объект задачи из базы данных.
     """
     # Логируем запрос на изменение времени задачи
-    logger.debug('Запрос к БД для переноса задачи %s', task_id)
+    logger.debug("Запрос к БД для переноса задачи %s", task_id)
 
     # Обновляем время задачи в базе данных
     await update_task_time(task_id, new_time)
@@ -92,7 +92,7 @@ async def get_task(task_id: str) -> dict | None:
         либо None, если задача с таким идентификатором отсутствует.
     """
     # Логируем запрос к базе данных
-    logger.debug('Запрос к БД для получения задачи %s', task_id)
+    logger.debug("Запрос к БД для получения задачи %s", task_id)
 
     # Возвращаем задачу из БД
     return await get_task_by_id(task_id)
@@ -112,7 +112,7 @@ async def get_tasks(user_id: int) -> list[dict]:
         list[dict]: Список объектов задач пользователя.
     """
     # Логируем запрос к базе данных
-    logger.debug('Запрос к БД для получения всех задач пользователя %s', user_id)
+    logger.debug("Запрос к БД для получения всех задач пользователя %s", user_id)
 
     # Возвращаем список задач пользователя
     return await get_all_tasks(user_id)
@@ -133,7 +133,7 @@ async def get_nearest_user_task(user_id: int) -> dict | None:
         либо None, если у пользователя нет задач.
     """
     # Логируем запрос к базе данных
-    logger.debug('Запрос к БД для получения ближайшей задачи пользователя %s', user_id)
+    logger.debug("Запрос к БД для получения ближайшей задачи пользователя %s", user_id)
 
     # Возвращаем ближайшую задачу пользователя
     return await get_nearest_task(user_id)

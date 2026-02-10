@@ -16,10 +16,12 @@ def cancel_menu_kb():
         InlineKeyboardMarkup: Объект клавиатуры Telegram.
     """
     # Формируем клавиатуру с двумя рядами кнопок
-    return InlineKeyboardMarkup([
-        [InlineKeyboardButton("↩️ В меню", callback_data="menu")],
-        [InlineKeyboardButton("❌ Отмена", callback_data="cancel")]
-    ])
+    return InlineKeyboardMarkup(
+        [
+            [InlineKeyboardButton("↩️ В меню", callback_data="menu")],
+            [InlineKeyboardButton("❌ Отмена", callback_data="cancel")],
+        ]
+    )
 
 
 @log_handler
@@ -35,8 +37,7 @@ async def start(update: Update, _: CallbackContext):
     """
     # Отправляем сообщение с выбором действия и клавиатурой MAIN_MENU
     await update.message.reply_text(
-        "Привет! Выбери действие 👇",
-        reply_markup=MAIN_MENU
+        "Привет! Выбери действие 👇", reply_markup=MAIN_MENU
     )
 
 
@@ -60,17 +61,15 @@ async def cancel(update: Update, context: CallbackContext):
     if update.callback_query:
         await update.callback_query.answer()  # Отвечаем на callback
         await update.callback_query.edit_message_text(
-            "Действие отменено 👍\nВыбери действие 👇",
-            reply_markup=MAIN_MENU
+            "Действие отменено 👍\nВыбери действие 👇", reply_markup=MAIN_MENU
         )
     else:
         # Если действие вызвано обычным сообщением
         await update.message.reply_text(
-            "Действие отменено 👍\nВыбери действие 👇",
-            reply_markup=MAIN_MENU
+            "Действие отменено 👍\nВыбери действие 👇", reply_markup=MAIN_MENU
         )
 
     # Очищаем временные данные пользователя
-    logger.info('Удалены временные данные пользователя %s', update.effective_user.id)
+    logger.info("Удалены временные данные пользователя %s", update.effective_user.id)
     context.user_data.clear()
     return ConversationHandler.END

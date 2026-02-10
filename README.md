@@ -91,7 +91,7 @@ TELEGRAM_TOKEN=your_telegram_token_here
 DATABASE_URL=postgresql://user:password@host:port/dbname
 ```
 
-Можно использовать `env.example` как шаблон.
+Можно использовать `.env.example` как шаблон.
 
 ---
 

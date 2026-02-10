@@ -35,13 +35,13 @@ def parse_datetime(text: str):
     # Текущее время в московском часовом поясе
     now = datetime.now(MOSCOW_TZ)
 
-    logger.debug('Запуск парсинга даты')
+    logger.debug("Запуск парсинга даты")
 
     # ------------------------------------------------------------------
     # 1. Строгий формат: YYYY-MM-DD HH:MM
     # ------------------------------------------------------------------
     try:
-        logger.debug('Парсинг даты прошёл успешно')
+        logger.debug("Парсинг даты прошёл успешно")
         return datetime.strptime(text, "%Y-%m-%d %H:%M")
     except ValueError:
         # Если формат не подошёл — переходим к следующим вариантам
@@ -54,7 +54,7 @@ def parse_datetime(text: str):
         # Отделяем часть со временем
         time_part = text.replace("сегодня", "").strip()
         try:
-            logger.debug('Парсинг даты прошёл успешно')
+            logger.debug("Парсинг даты прошёл успешно")
             hour, minute = map(int, time_part.split(":"))
 
             # Подставляем введённое время в текущую дату
@@ -69,7 +69,7 @@ def parse_datetime(text: str):
         # Отделяем часть со временем
         time_part = text.replace("завтра", "").strip()
         try:
-            logger.info('Парсинг даты прошёл успешно')
+            logger.info("Парсинг даты прошёл успешно")
             hour, minute = map(int, time_part.split(":"))
 
             # Увеличиваем текущую дату на один день и подставляем время
@@ -80,7 +80,7 @@ def parse_datetime(text: str):
             pass
 
     # Если ни один из вариантов не сработал — возвращаем None
-    logger.debug('Парсинг даты %s прошёл неуспешно', text)
+    logger.debug("Парсинг даты %s прошёл неуспешно", text)
     return None
 
 
@@ -116,8 +116,7 @@ def format_task_date(dt_or_str) -> str:
     else:
         # Защита от некорректных типов данных
         logger.error(
-            "Ошибка при попытке приобразовать datetime | ISO-строку %s",
-            dt_or_str
+            "Ошибка при попытке приобразовать datetime | ISO-строку %s", dt_or_str
         )
         raise TypeError(f"Expected str or datetime, got {type(dt_or_str)}")
 
@@ -181,12 +180,12 @@ def parse_and_validate_datetime(text: str) -> datetime | None:
         datetime | None: Объект datetime в UTC при успешном парсинге
         и валидации или None, если дата некорректна или уже прошла.
     """
-    logger.debug('Парсинг и валидация даты, введённой пользователем...')
+    logger.debug("Парсинг и валидация даты, введённой пользователем...")
 
     # Выполняем первичный парсинг даты
     dt = parse_datetime(text)
     if not dt:
-        logger.debug('Парсинг и валидация даты завершились неуспешно')
+        logger.debug("Парсинг и валидация даты завершились неуспешно")
         return None
 
     # Приводим дату к UTC для дальнейшей унифицированной работы
@@ -194,8 +193,8 @@ def parse_and_validate_datetime(text: str) -> datetime | None:
 
     # Проверяем, что дата находится в будущем
     if dt_utc < datetime.now(timezone.utc):
-        logger.debug('Парсинг даты завершился успешно, валидация не пройдена')
+        logger.debug("Парсинг даты завершился успешно, валидация не пройдена")
         return None
 
-    logger.debug('Парсинг и валидация даты завершились успешно')
+    logger.debug("Парсинг и валидация даты завершились успешно")
     return dt_utc

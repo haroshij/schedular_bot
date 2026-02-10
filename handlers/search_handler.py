@@ -33,12 +33,12 @@ async def search_handler(update: Update, _: CallbackContext):
         # Если запрос некорректный, отправляем предупреждение
         await update.message.reply_text(
             "❌ Запрос некорректный. Попробуйте другой.",
-            reply_markup=cancel_menu_kb()  # Кнопки "Отмена" и "В меню"
+            reply_markup=cancel_menu_kb(),  # Кнопки "Отмена" и "В меню"
         )
         logger.warning(
-            'Пользователь %s ввёл некорректный запрос: %s',
+            "Пользователь %s ввёл некорректный запрос: %s",
             update.effective_user.id,
-            query
+            query,
         )
         return SEARCH_QUERY  # Оставляем пользователя в состоянии ввода запроса
 
@@ -51,7 +51,7 @@ async def search_handler(update: Update, _: CallbackContext):
     # Отправляем результаты пользователю
     await update.message.reply_text(
         text,
-        reply_markup=cancel_menu_kb()  # Добавляем кнопки для возврата в меню
+        reply_markup=cancel_menu_kb(),  # Добавляем кнопки для возврата в меню
     )
 
     # Возвращаем состояние SEARCH_QUERY для возможности нового поиска

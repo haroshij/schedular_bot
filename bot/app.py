@@ -101,9 +101,13 @@ def create_app():
             entry_points=[CallbackQueryHandler(callbacks, pattern="^add_task$")],
             states={
                 # Ожидаем ввод даты задачи
-                ADD_DATE: [MessageHandler(filters.TEXT & ~filters.COMMAND, add_task_date)],
+                ADD_DATE: [
+                    MessageHandler(filters.TEXT & ~filters.COMMAND, add_task_date)
+                ],
                 # Ожидаем ввод текста задачи
-                ADD_TEXT: [MessageHandler(filters.TEXT & ~filters.COMMAND, add_task_text)],
+                ADD_TEXT: [
+                    MessageHandler(filters.TEXT & ~filters.COMMAND, add_task_text)
+                ],
             },
             # fallbacks для отмены или возврата в меню
             fallbacks=[

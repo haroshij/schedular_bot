@@ -44,13 +44,13 @@ async def add_task_date(update: Update, context: CallbackContext):
             "• 2026-02-10 18:30\n"
             "• сегодня 21:00\n"
             "• завтра 9:00",
-            reply_markup=cancel_menu_kb()  # Кнопки "Отмена" и "В меню"
+            reply_markup=cancel_menu_kb(),  # Кнопки "Отмена" и "В меню"
         )
         # Логируем попытку некорректного ввода
         logger.warning(
-            'Пользователь %s ввёл неверный формат или устаревшую дату: %s',
+            "Пользователь %s ввёл неверный формат или устаревшую дату: %s",
             update.effective_user.id,
-            update.message.text
+            update.message.text,
         )
         return ADD_DATE  # Остаёмся в состоянии ввода даты
 
@@ -59,8 +59,7 @@ async def add_task_date(update: Update, context: CallbackContext):
 
     # Просим пользователя ввести текст задачи после успешного ввода даты
     await update.message.reply_text(
-        "Теперь введи текст задачи:",
-        reply_markup=cancel_menu_kb()
+        "Теперь введи текст задачи:", reply_markup=cancel_menu_kb()
     )
     return ADD_TEXT  # Переход к следующему шагу — ввод текста задачи
 
@@ -96,13 +95,11 @@ async def add_task_text(update: Update, context: CallbackContext):
         # Если пользователь ввёл дату в прошлом — задача не добавляется
         await update.message.reply_text(
             "❌ Введённая дата уже прошла. Задача не добавлена. Пожалуйста, попробуйте снова",
-            reply_markup=MAIN_MENU
+            reply_markup=MAIN_MENU,
         )
         # Логируем устаревшую дату
         logger.warning(
-            'Пользователь %s ввёл устаревшую дату: %s',
-            user_id,
-            scheduled_time
+            "Пользователь %s ввёл устаревшую дату: %s", user_id, scheduled_time
         )
         # Очищаем временные данные пользователя
         context.user_data.clear()
@@ -117,7 +114,7 @@ async def add_task_text(update: Update, context: CallbackContext):
     # Добавляем задание напоминания в job_queue
     context.application.job_queue.run_once(
         send_task_reminder,  # Функция, которая будет вызвана
-        max(0, delay),       # Задержка до выполнения
+        max(0, delay),  # Задержка до выполнения
         data={"task": task, "chat_id": user_id},  # Передаём данные для функции
         name=f"task_{task['id']}",  # Уникальное имя задания
     )
@@ -158,12 +155,12 @@ async def postpone_date(update: Update, context: CallbackContext):
             "• 2026-02-10 18:30\n"
             "• сегодня 21:00\n"
             "• завтра 9:00",
-            reply_markup=cancel_menu_kb()
+            reply_markup=cancel_menu_kb(),
         )
         logger.warning(
-            'Пользователь %s ввёл неверный формат или устаревшую дату: %s',
+            "Пользователь %s ввёл неверный формат или устаревшую дату: %s",
             update.effective_user.id,
-            update.message.text
+            update.message.text,
         )
         return POSTPONE_DATE  # Остаёмся в состоянии переноса
 

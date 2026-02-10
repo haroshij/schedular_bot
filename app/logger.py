@@ -13,7 +13,9 @@ import sys
 """
 
 # Создаём объект логгера для нашего бота с уникальным именем
-logger = logging.getLogger("schedular_bot")  # Имя логгера, чтобы различать источники логов
+logger = logging.getLogger(
+    "schedular_bot"
+)  # Имя логгера, чтобы различать источники логов
 
 # Устанавливаем уровень логирования
 logger.setLevel(logging.INFO)
@@ -21,7 +23,7 @@ logger.setLevel(logging.INFO)
 # Создаём форматтер для логов, чтобы сообщения были читабельными
 formatter = logging.Formatter(
     "%(asctime)s | %(levelname)s | %(name)s | %(message)s",  # Формат сообщения
-    datefmt="%Y-%m-%d %H:%M:%S"  # Формат времени
+    datefmt="%Y-%m-%d %H:%M:%S",  # Формат времени
 )
 
 # Создаём обработчик, который выводит логи в консоль (stdout)

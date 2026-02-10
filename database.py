@@ -36,7 +36,7 @@ def get_pool() -> asyncpg.Pool:
         RuntimeError: если пул соединений еще не создан
     """
     if _pool is None:
-        logger.error('Ошибка инициализации пула соединений с %s', DATABASE_URL)
+        logger.error("Ошибка инициализации пула соединений с %s", DATABASE_URL)
         raise RuntimeError("DB pool not initialized")
     return _pool
 
@@ -66,7 +66,9 @@ async def init_db() -> None:
     global _pool
     if _pool is None:
         logger.debug("Создание пула соединений с %s", DATABASE_URL)
-        _pool = await asyncpg.create_pool(DATABASE_URL, min_size=2, max_size=5, timeout=10)  # type: ignore
+        _pool = await asyncpg.create_pool(
+            DATABASE_URL, min_size=2, max_size=5, timeout=10
+        )  # type: ignore
 
     # Получаем соединение из пула для создания таблиц
     async with get_pool().acquire() as conn:
@@ -145,7 +147,10 @@ async def add_task(task_id: str, user_id: int, title: str, scheduled_time: datet
             INSERT INTO tasks (id, user_id, title, scheduled_time, status)
             VALUES ($1, $2, $3, $4, 'pending')
             """,
-            task_id, user_id, title, scheduled_time
+            task_id,
+            user_id,
+            title,
+            scheduled_time,
         )
 
 
@@ -177,7 +182,7 @@ async def get_nearest_task(user_id: int) -> Optional[Dict]:
             ORDER BY scheduled_time
             LIMIT 1
             """,
-            user_id
+            user_id,
         )
         return dict(row) if row else None
 
@@ -210,7 +215,7 @@ async def get_all_tasks(user_id: int) -> List[Dict]:
             WHERE user_id = $1 AND status = 'pending'
             ORDER BY scheduled_time
             """,
-            user_id
+            user_id,
         )
         return [dict(r) for r in rows]
 
@@ -245,7 +250,8 @@ async def update_task_time(task_id: str, new_time: datetime):
             SET scheduled_time = $1, status = 'pending'
             WHERE id = $2
             """,
-            new_time, task_id
+            new_time,
+            task_id,
         )
 
 
@@ -275,7 +281,7 @@ async def mark_task_done(task_id: str):
             SET status = 'done'
             WHERE id = $1
             """,
-            task_id
+            task_id,
         )
 
 
@@ -302,10 +308,7 @@ async def get_task_by_id(task_id: str) -> Optional[Dict]:
         Optional[Dict]: Словарь с данными задачи или None
     """
     async with get_pool().acquire() as conn:
-        row = await conn.fetchrow(
-            "SELECT * FROM tasks WHERE id = $1",
-            task_id
-        )
+        row = await conn.fetchrow("SELECT * FROM tasks WHERE id = $1", task_id)
         return dict(row) if row else None
 
 
@@ -331,10 +334,7 @@ async def get_user_city(user_id: int) -> Optional[str]:
         Optional[str]: Название города пользователя или None
     """
     async with get_pool().acquire() as conn:
-        row = await conn.fetchrow(
-            "SELECT city FROM users WHERE user_id = $1",
-            user_id
-        )
+        row = await conn.fetchrow("SELECT city FROM users WHERE user_id = $1", user_id)
         return row["city"] if row else None
 
 
@@ -368,7 +368,8 @@ async def set_user_city(user_id: int, city: str):
             ON CONFLICT (user_id)
             DO UPDATE SET city = EXCLUDED.city
             """,
-            user_id, city
+            user_id,
+            city,
         )
 
 
@@ -427,7 +428,5 @@ async def get_all_pending_tasks() -> list[dict]:
         list[dict]: Список словарей с активными задачами
     """
     async with get_pool().acquire() as conn:
-        rows = await conn.fetch(
-            "SELECT * FROM tasks WHERE status='pending'"
-        )
+        rows = await conn.fetch("SELECT * FROM tasks WHERE status='pending'")
         return [dict(r) for r in rows]

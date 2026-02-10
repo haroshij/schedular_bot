@@ -1,6 +1,11 @@
 import pytest
 from datetime import datetime, timezone, timedelta
-from utils.tasks_utils import parse_datetime, format_task_date, format_task, parse_and_validate_datetime
+from utils.tasks_utils import (
+    parse_datetime,
+    format_task_date,
+    format_task,
+    parse_and_validate_datetime,
+)
 from constants.time_constants import MOSCOW_TZ, RU_DAYS, RU_MONTHS
 from freezegun import freeze_time
 
@@ -15,11 +20,14 @@ from freezegun import freeze_time
         ("2026-02-10 15:30", datetime(2026, 2, 10, 15, 30)),
         ("сегодня 14:45", datetime(2026, 2, 9, 14, 45, tzinfo=MOSCOW_TZ)),
         ("завтра 09:15", datetime(2026, 2, 10, 9, 15, tzinfo=MOSCOW_TZ)),
-        ("  сегодня  07:00  ", datetime(2026, 2, 9, 7, 0, tzinfo=MOSCOW_TZ)),  # с пробелами
+        (
+            "  сегодня  07:00  ",
+            datetime(2026, 2, 9, 7, 0, tzinfo=MOSCOW_TZ),
+        ),  # с пробелами
         ("некорректно", None),
         ("сегодня abc", None),
         ("завтра 25:00", None),
-    ]
+    ],
 )
 def test_parse_datetime(text, expected):
     """
@@ -125,7 +133,6 @@ def test_format_task_date_iso_string():
     assert result == expected
 
 
-
 # -------------------------------------------------------------------
 # Тест функции format_task_date с некорректным типом
 # -------------------------------------------------------------------
@@ -174,7 +181,7 @@ def test_format_task():
     # Создаем пример задачи
     task = {
         "title": "Тестовая задача",
-        "scheduled_time": datetime(2026, 2, 10, 12, 0, tzinfo=timezone.utc)
+        "scheduled_time": datetime(2026, 2, 10, 12, 0, tzinfo=timezone.utc),
     }
 
     # Вызываем функцию форматирования задачи
@@ -221,30 +228,36 @@ def test_format_task_date_naive_datetime():
     [
         # Тестируем корректное значение "завтра 14:00"
         # Ожидается, что функция вернет datetime в UTC на следующий день
-        ("завтра 14:00", (datetime.now() + timedelta(days=1)).replace(
-            day=datetime.now().day + 1,  # день завтрашний
-            hour=11,  # 14:00 по Московскому времени = 11:00 UTC
-            minute=0,
-            second=0,
-            microsecond=0,
-            tzinfo=timezone.utc
-        )),
+        (
+            "завтра 14:00",
+            (datetime.now() + timedelta(days=1)).replace(
+                day=datetime.now().day + 1,  # день завтрашний
+                hour=11,  # 14:00 по Московскому времени = 11:00 UTC
+                minute=0,
+                second=0,
+                microsecond=0,
+                tzinfo=timezone.utc,
+            ),
+        ),
         # Тестируем корректное значение "сегодня 23:59"
         # Ожидается, что функция вернет datetime в UTC текущего дня
-        ("сегодня 23:59", datetime.now().replace(
-            hour=20,  # 23:59 по Московскому времени = 20:59 UTC
-            minute=59,
-            second=0,
-            microsecond=0,
-            tzinfo=timezone.utc
-        )),
+        (
+            "сегодня 23:59",
+            datetime.now().replace(
+                hour=20,  # 23:59 по Московскому времени = 20:59 UTC
+                minute=59,
+                second=0,
+                microsecond=0,
+                tzinfo=timezone.utc,
+            ),
+        ),
         # Тестируем дату в прошлом
         # Ожидается, что функция вернет None, так как дата уже прошла
         ("2026-02-08 15:00", None),
         # Тестируем некорректный формат строки
         # Ожидается, что функция вернет None
-        ("некорректно", None)
-    ]
+        ("некорректно", None),
+    ],
 )
 def test_parse_and_validate_datetime(text, expected):
     """

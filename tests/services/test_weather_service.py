@@ -22,7 +22,9 @@ class MockAiohttpResponse:
             json_data (dict): Данные, которые должен вернуть метод json()
         """
         self.status = status
-        self._json = json_data or {}  # Если json_data не передан, возвращаем пустой словарь
+        self._json = (
+            json_data or {}
+        )  # Если json_data не передан, возвращаем пустой словарь
 
     async def json(self):
         """
@@ -103,9 +105,7 @@ async def test_get_weather_success():
     """
     # Задаем фейковые данные API
     fake_data = {
-        "current_condition": [
-            {"weatherDesc": [{"value": "Sunny"}], "temp_C": "25"}
-        ]
+        "current_condition": [{"weatherDesc": [{"value": "Sunny"}], "temp_C": "25"}]
     }
 
     # Создаем мок-объект ответа с фейковыми данными и статусом 200
@@ -115,14 +115,13 @@ async def test_get_weather_success():
     mock_session = MockAiohttpSession(response=mock_response)
 
     # Патчим ClientSession, чтобы функция _get_weather использовала наш мок
-    with patch("services.weather_service.aiohttp.ClientSession", return_value=mock_session):
+    with patch(
+        "services.weather_service.aiohttp.ClientSession", return_value=mock_session
+    ):
         result = await weather_service._get_weather("Moscow")
 
     # Проверяем, что результат преобразован правильно
-    assert result == {
-        "weather": [{"description": "Sunny"}],
-        "main": {"temp": 25.0}
-    }
+    assert result == {"weather": [{"description": "Sunny"}], "main": {"temp": 25.0}}
 
 
 @pytest.mark.asyncio
@@ -139,7 +138,9 @@ async def test_get_weather_http_error():
     mock_session = MockAiohttpSession(response=mock_response)
 
     # Патчим ClientSession на мок
-    with patch("services.weather_service.aiohttp.ClientSession", return_value=mock_session):
+    with patch(
+        "services.weather_service.aiohttp.ClientSession", return_value=mock_session
+    ):
         result = await weather_service._get_weather("Moscow")
 
     # Проверяем наличие ключа 'error' и кода 404 в сообщении
@@ -166,7 +167,9 @@ async def test_get_weather_json_error():
     mock_session = MockAiohttpSession(response=mock_response)
 
     # Патчим ClientSession
-    with patch("services.weather_service.aiohttp.ClientSession", return_value=mock_session):
+    with patch(
+        "services.weather_service.aiohttp.ClientSession", return_value=mock_session
+    ):
         result = await weather_service._get_weather("Moscow")
 
     # Проверяем наличие ключа 'error' и текста ошибки
@@ -184,23 +187,21 @@ async def test_get_weather_with_translation_success():
     перевести описание через translate_weather и вернуть словарь с ключами
     'city', 'description' и 'temp'.
     """
-    fake_data = {
-        "weather": [{"description": "Cloudy"}],
-        "main": {"temp": 10.0}
-    }
+    fake_data = {"weather": [{"description": "Cloudy"}], "main": {"temp": 10.0}}
 
     # Патчим функции validate_city, _get_weather и translate_weather
-    with patch("services.weather_service.validate_city", return_value=True), \
-            patch("services.weather_service._get_weather", return_value=fake_data), \
-            patch("services.weather_service.translate_weather", side_effect=lambda x: f"RU-{x}"):
+    with (
+        patch("services.weather_service.validate_city", return_value=True),
+        patch("services.weather_service._get_weather", return_value=fake_data),
+        patch(
+            "services.weather_service.translate_weather",
+            side_effect=lambda x: f"RU-{x}",
+        ),
+    ):
         result = await weather_service.get_weather_with_translation("Moscow")
 
     # Проверяем корректность результата
-    assert result == {
-        "city": "Moscow",
-        "description": "RU-Cloudy",
-        "temp": 10.0
-    }
+    assert result == {"city": "Moscow", "description": "RU-Cloudy", "temp": 10.0}
 
 
 @pytest.mark.asyncio
@@ -236,8 +237,13 @@ async def test_get_weather_with_translation_error_from_api():
     # Патчим validate_city, чтобы город считался валидным
     # Патчим _get_weather, чтобы она вернула заранее определённую ошибку
     # Это имитация ситуации, когда API погоды вернул ошибку
-    with patch("services.weather_service.validate_city", return_value=True), \
-            patch("services.weather_service._get_weather", return_value={"error": "Ошибка получения погоды (500)"}):
+    with (
+        patch("services.weather_service.validate_city", return_value=True),
+        patch(
+            "services.weather_service._get_weather",
+            return_value={"error": "Ошибка получения погоды (500)"},
+        ),
+    ):
         # Вызываем функцию с валидным городом, но _get_weather вернёт ошибку
         result = await weather_service.get_weather_with_translation("Moscow")
 
@@ -263,7 +269,9 @@ async def test_get_weather_data_processing_error():
     mock_session = MockAiohttpSession(response=mock_resp)
 
     # Патчим ClientSession на мок
-    with patch("services.weather_service.aiohttp.ClientSession", return_value=mock_session):
+    with patch(
+        "services.weather_service.aiohttp.ClientSession", return_value=mock_session
+    ):
         result = await weather_service._get_weather("Moscow")
 
     # Проверяем, что функция вернула словарь с ключом 'error'

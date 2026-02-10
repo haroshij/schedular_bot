@@ -72,8 +72,12 @@ async def test_search_duckduckgo_success(mock_loop):
     mock_loop.run_in_executor.return_value = make_future(fake_results)
 
     # Подменяем event loop и класс DDGS
-    with patch("services.search_service.asyncio.get_running_loop", return_value=mock_loop), \
-            patch("services.search_service.DDGS"):
+    with (
+        patch(
+            "services.search_service.asyncio.get_running_loop", return_value=mock_loop
+        ),
+        patch("services.search_service.DDGS"),
+    ):
         result = await search_duckduckgo("python")
 
     # Проверяем корректность форматирования результатов
@@ -96,8 +100,12 @@ async def test_search_duckduckgo_empty_result(mock_loop):
     mock_loop.run_in_executor.return_value = make_future([])
 
     # Подменяем event loop и DDGS
-    with patch("services.search_service.asyncio.get_running_loop", return_value=mock_loop), \
-            patch("services.search_service.DDGS"):
+    with (
+        patch(
+            "services.search_service.asyncio.get_running_loop", return_value=mock_loop
+        ),
+        patch("services.search_service.DDGS"),
+    ):
         result = await search_duckduckgo("nothing")
 
     # Проверяем сообщение по умолчанию
@@ -128,8 +136,12 @@ async def test_search_duckduckgo_skips_invalid_items(mock_loop):
     mock_loop.run_in_executor.return_value = make_future(fake_results)
 
     # Подменяем event loop и DDGS
-    with patch("services.search_service.asyncio.get_running_loop", return_value=mock_loop), \
-            patch("services.search_service.DDGS"):
+    with (
+        patch(
+            "services.search_service.asyncio.get_running_loop", return_value=mock_loop
+        ),
+        patch("services.search_service.DDGS"),
+    ):
         result = await search_duckduckgo("test")
 
     # В результат должен попасть только один валидный элемент
@@ -152,8 +164,12 @@ async def test_search_duckduckgo_exception(mock_loop):
     mock_loop.run_in_executor.return_value = fut
 
     # Подменяем event loop и DDGS
-    with patch("services.search_service.asyncio.get_running_loop", return_value=mock_loop), \
-            patch("services.search_service.DDGS"):
+    with (
+        patch(
+            "services.search_service.asyncio.get_running_loop", return_value=mock_loop
+        ),
+        patch("services.search_service.DDGS"),
+    ):
         result = await search_duckduckgo("error")
 
     # Проверяем корректное сообщение об ошибке
@@ -173,9 +189,14 @@ async def test_main_execution():
     fake_results = ["Result 1", "Result 2"]
 
     # Подменяем input, search_duckduckgo и print
-    with patch("builtins.input", return_value="query"), \
-            patch("services.search_service.search_duckduckgo", new=AsyncMock(return_value=fake_results)), \
-            patch("builtins.print") as mock_print:
+    with (
+        patch("builtins.input", return_value="query"),
+        patch(
+            "services.search_service.search_duckduckgo",
+            new=AsyncMock(return_value=fake_results),
+        ),
+        patch("builtins.print") as mock_print,
+    ):
         await main()
 
     # Проверяем, что print был вызван для каждого результата

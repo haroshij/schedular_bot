@@ -32,16 +32,14 @@ async def _get_weather(city: str) -> dict:
     # Создаём HTTP-сессию для выполнения асинхронного запроса
     async with aiohttp.ClientSession() as session:
         # Логируем попытку соединения с внешним сервисом
-        logger.info('Попытка соединения с %s...', url)
+        logger.info("Попытка соединения с %s...", url)
         try:
             # Выполняем GET-запрос
             async with session.get(url) as resp:
                 # Проверяем HTTP-статус ответа
                 if resp.status != 200:
                     logger.warning(
-                        'Ошибка получения погоды с %s. Статус: %s',
-                        url,
-                        resp.status
+                        "Ошибка получения погоды с %s. Статус: %s", url, resp.status
                     )
                     return {"error": f"Ошибка получения погоды ({resp.status})"}
 
@@ -49,7 +47,7 @@ async def _get_weather(city: str) -> dict:
                 data = await resp.json()
         except Exception as e:
             # Логируем любые ошибки подключения или чтения ответа
-            logger.warning('Ошибка подключения к %s\n%s', url, e)
+            logger.warning("Ошибка подключения к %s\n%s", url, e)
             return {"error": f"Не удалось подключиться: {e}"}
 
     try:
@@ -63,16 +61,13 @@ async def _get_weather(city: str) -> dict:
         temp = float(current["temp_C"])
 
         # Логируем успешную обработку данных
-        logger.info('Обработка данных, полученных с %s, прошла успешно', url)
+        logger.info("Обработка данных, полученных с %s, прошла успешно", url)
 
         # Возвращаем данные в унифицированном формате
-        return {
-            "weather": [{"description": description}],
-            "main": {"temp": temp}
-        }
+        return {"weather": [{"description": description}], "main": {"temp": temp}}
     except Exception as e:
         # Логируем ошибки обработки структуры ответа
-        logger.warning('Ошибка обработки данных\n%s', e)
+        logger.warning("Ошибка обработки данных\n%s", e)
         return {"error": f"Ошибка обработки данных: {e}"}
 
 
@@ -103,11 +98,11 @@ async def get_weather_with_translation(city: str) -> dict:
         либо словарь с ключом `error` в случае ошибки.
     """
     # Логируем начало получения информации о погоде
-    logger.info('Запуск получения информации по погоде в городе %s', city)
+    logger.info("Запуск получения информации по погоде в городе %s", city)
 
     # Проверяем корректность названия города
     if not validate_city(city):
-        logger.warning('Название города %s не валидировано', city)
+        logger.warning("Название города %s не валидировано", city)
         return {"error": "Некорректное название города"}
 
     # Получаем сырые данные о погоде
@@ -121,7 +116,7 @@ async def get_weather_with_translation(city: str) -> dict:
     desc_en = data["weather"][0]["description"]
 
     # Логируем успешное получение погодных данных
-    logger.info('Получение информации по погоде в городе %s прошло успешно', city)
+    logger.info("Получение информации по погоде в городе %s прошло успешно", city)
 
     # Формируем итоговый словарь для использования в боте
     return {

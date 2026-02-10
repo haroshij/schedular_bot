@@ -36,7 +36,7 @@ async def search_duckduckgo(query: str) -> list[str]:
     loop = asyncio.get_running_loop()
 
     # Логируем запуск поискового запроса
-    logger.info('Запуск поиска через DDGS (Dux Distributed Global Search)...')
+    logger.info("Запуск поиска через DDGS (Dux Distributed Global Search)...")
 
     def search_ddgs():  # pragma: no cover
         """
@@ -57,8 +57,7 @@ async def search_duckduckgo(query: str) -> list[str]:
     except Exception as e:
         # Логируем ошибку поиска
         logger.warning(
-            'Ошибка поиска через DDGS (Dux Distributed Global Search)\n%s',
-            e
+            "Ошибка поиска через DDGS (Dux Distributed Global Search)\n%s", e
         )
         # Возвращаем список с текстом ошибки
         return [f"Ошибка поиска: {e}"]
@@ -82,7 +81,7 @@ async def search_duckduckgo(query: str) -> list[str]:
         output.append("Ничего не найдено.")
 
     # Логируем успешное завершение поиска
-    logger.info('Поиска через DDGS (Dux Distributed Global Search) завершён')
+    logger.info("Поиска через DDGS (Dux Distributed Global Search) завершён")
 
     # Возвращаем список результатов пользователю
     return output

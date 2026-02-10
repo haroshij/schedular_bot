@@ -26,10 +26,7 @@ async def handle_menu_callbacks(update: Update, _: CallbackContext, data: str):
     # Проверяем, что пользователь нажал кнопку "menu"
     if data == "menu":
         # Редактируем сообщение и выводим главное меню
-        await query.edit_message_text(
-            "Выбери действие 👇",
-            reply_markup=MAIN_MENU
-        )
+        await query.edit_message_text("Выбери действие 👇", reply_markup=MAIN_MENU)
         return None
 
     # Если callback не относится к меню — возвращаем None

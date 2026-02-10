@@ -55,7 +55,7 @@ def log_handler(func):
                 user_id,
                 func.__name__,
                 user_text,
-                callback_data
+                callback_data,
             )
 
             # Выполняем сам хендлер
@@ -65,7 +65,7 @@ def log_handler(func):
             logger.debug(
                 "Хендлер %s завершился успешно для пользователя %s",
                 func.__name__,
-                user_id
+                user_id,
             )
             return result
         except Exception as e:
@@ -74,7 +74,7 @@ def log_handler(func):
                 "Ошибка в хендлере %s для пользователя %s\n%s",
                 func.__name__,
                 user_id,
-                e
+                e,
             )
 
             # Возвращаем ConversationHandler.END, чтобы корректно завершить разговор при ошибке

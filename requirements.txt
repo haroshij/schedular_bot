@@ -31,7 +31,7 @@ pluggy==1.6.0
 primp==0.15.0
 propcache==0.4.1
 Pygments==2.19.2
-pytest==9.0.2
+pytest==9.0.2  # Ignored CVE-2025-71176 in IDE, review needed
 pytest-asyncio==1.3.0
 pytest-cov==7.0.0
 pytest-mock==3.15.1
@@ -39,6 +39,7 @@ python-dateutil==2.9.0.post0
 python-dotenv==1.2.1
 python-telegram-bot==22.6
 requests==2.32.5
+ruff==0.15.0
 six==1.17.0
 socksio==1.0.0
 soupsieve==2.8.3
