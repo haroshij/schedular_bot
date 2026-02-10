@@ -1,7 +1,7 @@
 from telegram import Update
 from telegram.ext import CallbackContext
 
-from handlers.common import cancel_menu_kb
+from handlers.common.common import cancel_menu_kb
 from states import WEATHER_CITY
 from database import get_user_city
 from services.weather_service import get_weather_with_translation

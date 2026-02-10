@@ -1,7 +1,7 @@
 from telegram import Update
 from telegram.ext import CallbackContext
 
-from handlers.common import cancel_menu_kb
+from handlers.common.common import cancel_menu_kb
 from states import SEARCH_QUERY
 from app.decorators import log_handler
 

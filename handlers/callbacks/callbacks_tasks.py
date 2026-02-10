@@ -2,7 +2,7 @@ from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import CallbackContext
 
 from keyboard import MAIN_MENU, task_actions, tasks_inline_menu
-from handlers.common import cancel_menu_kb
+from handlers.common.common import cancel_menu_kb
 from states import ADD_DATE, POSTPONE_DATE
 from utils.tasks_utils import format_task
 from app.decorators import log_handler

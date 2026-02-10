@@ -1,5 +1,5 @@
 from uuid import uuid4
-from datetime import datetime, timezone
+from datetime import datetime
 
 from database import (
     add_task,

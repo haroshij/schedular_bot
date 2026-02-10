@@ -6,7 +6,7 @@ from telegram.ext import CallbackContext, ConversationHandler
 from keyboard import MAIN_MENU
 from states import ADD_DATE, ADD_TEXT, POSTPONE_DATE
 from bot.jobs import send_task_reminder
-from handlers.common import cancel_menu_kb
+from handlers.common.common import cancel_menu_kb
 from services.tasks_service import create_task, change_task_time
 from utils.tasks_utils import parse_and_validate_datetime
 from app.decorators import log_handler

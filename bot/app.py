@@ -9,7 +9,7 @@ from telegram.ext import (
 )
 from app.logger import logger
 from database import init_db, close_db
-from handlers.common import start, cancel
+from handlers.common.common import start, cancel
 from handlers.tasks_handler import add_task_date, add_task_text, postpone_date
 from handlers.search_handler import search_handler
 from handlers.weather_handler import weather_handler
