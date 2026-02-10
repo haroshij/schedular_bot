@@ -1,74 +1,49 @@
-# Python>=3.14.0
-
-# -----------------------------
-# Asynchronous libraries
-# -----------------------------
-aiohappyeyeballs==2.6.1    # Handles happy eyeballs algorithm for fast IPv4/IPv6 connection
-aiohttp==3.13.3            # Async HTTP client/server library
-aiosignal==1.4.0           # Async signal handling
-anyio==4.12.1               # Asynchronous networking library, backend for multiple async frameworks
-asyncpg==0.31.0             # Async PostgreSQL client
-frozenlist==1.8.0           # Immutable list implementation used by aiohttp
-socksio==1.0.0              # SOCKS proxy support for async connections
-httpcore==1.0.9             # Low-level HTTP library used by httpx
-httpx==0.28.1               # Async HTTP client built on top of httpcore
-
-# -----------------------------
-# Task scheduler
-# -----------------------------
-APScheduler==3.11.2         # Advanced Python Scheduler for periodic tasks
-
-# -----------------------------
-# Testing utilities
-# -----------------------------
-pytest==9.0.2               # Testing framework
-pytest-asyncio==1.3.0       # Async support for pytest
-pytest-cov==7.0.0           # Coverage reporting for pytest
-pytest-mock==3.15.1         # Simplified mocking utilities for pytest
-freezegun==1.5.5            # Freezes time for deterministic tests
-coverage==7.13.4            # Code coverage measurement
-codecov==2.1.13             # Codecov integration for CI reporting
-
-# -----------------------------
-# Telegram bot
-# -----------------------------
-python-telegram-bot==22.6   # Official Python wrapper for Telegram Bot API
-
-# -----------------------------
-# HTTP and web utilities
-# -----------------------------
-requests==2.32.5             # HTTP requests library
-ddgs==9.10.0                 # Searching in web
-fake-useragent==2.2.0        # Generates random User-Agent headers
-lxml==6.0.2                  # XML and HTML parsing
-soupsieve==2.8.3             # CSS selector support for BeautifulSoup
-yarl==1.22.0                 # URL parsing library
-multidict==6.7.1             # Multidict data structure for headers etc.
-charset-normalizer==3.4.4    # Encoding detection
-idna==3.11                    # Internationalized domain names
-urllib3==2.6.3               # HTTP client support
-brotli==1.2.0                # Compression library
-
-# -----------------------------
-# Date and time
-# -----------------------------
-tzdata==2025.3               # Timezone database
-tzlocal==5.3.1               # Local timezone detection
-python-dateutil==2.9.0.post0 # Date parsing and manipulation utilities
-
-# -----------------------------
-# Miscellaneous utilities
-# -----------------------------
-attrs==25.4.0                # Class attributes helper library
-python-dotenv==1.2.1         # Access to environment variables
-click==8.3.1                 # CLI utilities
-colorama==0.4.6              # Colored terminal output
-packaging==26.0              # Version and packaging utilities
-primp==0.15.0                # Miscellaneous helpers
-propcache==0.4.1             # Property caching
-Pygments==2.19.2             # Syntax highlighting
-six==1.17.0                  # Python 2/3 compatibility helpers
-iniconfig==2.3.0             # INI file parsing, used by pytest
-h11==0.16.0                  # HTTP/1.1 protocol implementation
-h2==4.3.0                     # HTTP/2 protocol implementation
-hpack==4.1.0                 # HTTP/2 header compression
+aiohappyeyeballs==2.6.1
+aiohttp==3.13.3
+aiosignal==1.4.0
+anyio==4.12.1
+APScheduler==3.11.2
+asyncpg==0.31.0
+attrs==25.4.0
+brotli==1.2.0
+certifi==2026.1.4
+charset-normalizer==3.4.4
+click==8.3.1
+codecov==2.1.13
+colorama==0.4.6
+coverage==7.13.4
+ddgs==9.10.0
+fake-useragent==2.2.0
+freezegun==1.5.5
+frozenlist==1.8.0
+h11==0.16.0
+h2==4.3.0
+hpack==4.1.0
+httpcore==1.0.9
+httpx==0.28.1
+hyperframe==6.1.0
+idna==3.11
+iniconfig==2.3.0
+lxml==6.0.2
+multidict==6.7.1
+packaging==26.0
+pluggy==1.6.0
+primp==0.15.0
+propcache==0.4.1
+Pygments==2.19.2
+pytest==9.0.2
+pytest-asyncio==1.3.0
+pytest-cov==7.0.0
+pytest-mock==3.15.1
+python-dateutil==2.9.0.post0
+python-dotenv==1.2.1
+python-telegram-bot==22.6
+requests==2.32.5
+six==1.17.0
+socksio==1.0.0
+soupsieve==2.8.3
+typing_extensions==4.15.0
+tzdata==2025.3
+tzlocal==5.3.1
+urllib3==2.6.3
+yarl==1.22.0
