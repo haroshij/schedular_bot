@@ -59,6 +59,7 @@ python-dateutil==2.9.0.post0 # Date parsing and manipulation utilities
 # Miscellaneous utilities
 # -----------------------------
 attrs==25.4.0                # Class attributes helper library
+python-dotenv==1.2.1         # Access to environment variables
 click==8.3.1                 # CLI utilities
 colorama==0.4.6              # Colored terminal output
 packaging==26.0              # Version and packaging utilities
