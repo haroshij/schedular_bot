@@ -53,7 +53,7 @@ async def search_duckduckgo(query: str) -> list[str]:
     try:
         # Выполняем синхронный поиск в пуле потоков,
         # чтобы не блокировать asyncio event loop
-        results = await loop.run_in_executor(None, search_ddgs)
+        results = await loop.run_in_executor(None, search_ddgs)  # type: ignore
     except Exception as e:
         # Логируем ошибку поиска
         logger.warning(
