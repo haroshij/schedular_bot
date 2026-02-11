@@ -41,9 +41,9 @@ async def send_task_reminder(context: CallbackContext):
         task_db = await get_task_by_id(task["id"])
         # Проверка статуса задачи и времени выполнения
         if (
-                not task_db
-                or task_db.get("status") != "pending"
-                or task_db["scheduled_time"] != expected_time
+            not task_db
+            or task_db.get("status") != "pending"
+            or task_db["scheduled_time"] != expected_time
         ):
             logger.info("Задача %s уже выполнена или удалена", task["id"])
             return
