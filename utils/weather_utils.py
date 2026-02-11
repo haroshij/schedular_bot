@@ -1,7 +1,3 @@
-import re
-
-from constants.weather_constants import WEATHER_TRANSLATIONS
-
 """
 Вспомогательный модуль для работы с погодными данными.
 
@@ -10,6 +6,10 @@ from constants.weather_constants import WEATHER_TRANSLATIONS
 - валидация названия города, введённого пользователем;
 - перевод текстового описания погоды с английского языка на русский.
 """
+
+import re
+
+from constants.weather_constants import WEATHER_TRANSLATIONS
 
 # Регулярное выражение для проверки корректности названия города
 # Разрешены:

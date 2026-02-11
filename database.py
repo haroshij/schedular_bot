@@ -72,7 +72,9 @@ async def init_db() -> None:
     global _pool
     if _pool is None:
         logger.debug("Создание пула соединений с %s", safe_url)
-        _pool = await asyncpg.create_pool(DATABASE_URL, min_size=2, max_size=5, timeout=10)  # type: ignore
+        _pool = await asyncpg.create_pool(
+            DATABASE_URL, min_size=2, max_size=5, timeout=10
+        )  # type: ignore
 
     # Получаем соединение из пула для создания таблиц
     async with get_pool().acquire() as conn:

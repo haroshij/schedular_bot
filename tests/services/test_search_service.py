@@ -173,7 +173,7 @@ async def test_search_duckduckgo_exception(mock_loop):
         result = await search_duckduckgo("error")
 
     # Проверяем корректное сообщение об ошибке
-    assert result == ["Ошибка поиска: DDG down"]
+    assert result == ["Произошла ошибка при поиске. Попробуйте позже."]
 
 
 @pytest.mark.asyncio

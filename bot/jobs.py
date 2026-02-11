@@ -1,3 +1,10 @@
+"""
+Модуль работы с задачами и напоминаниями.
+
+Содержит функции для отправки напоминаний пользователям и восстановления всех
+невыполненных задач при старте бота.
+"""
+
 from datetime import datetime, timezone
 from telegram.ext import CallbackContext
 
@@ -5,13 +12,6 @@ from app.logger import logger
 from database import get_task_by_id, get_all_pending_tasks
 from keyboard import task_actions
 from utils.tasks_utils import format_task
-
-"""
-Модуль работы с задачами и напоминаниями.
-
-Содержит функции для отправки напоминаний пользователям и восстановления всех 
-невыполненных задач при старте бота.
-"""
 
 
 async def send_task_reminder(context: CallbackContext):
@@ -27,7 +27,7 @@ async def send_task_reminder(context: CallbackContext):
         Exception: Логируется, если происходит ошибка при отправке сообщения.
     """
     # Получаем данные job (task + chat_id)
-    job_data: dict | object = context.job.data  # говорим IDE, что это dict или object
+    job_data: dict | None = context.job.data
     if not job_data:
         logger.warning("Job без данных!")
         return
@@ -41,9 +41,9 @@ async def send_task_reminder(context: CallbackContext):
         task_db = await get_task_by_id(task["id"])
         # Проверка статуса задачи и времени выполнения
         if (
-            not task_db
-            or task_db.get("status") != "pending"
-            or task_db["scheduled_time"] != expected_time
+                not task_db
+                or task_db.get("status") != "pending"
+                or task_db["scheduled_time"] != expected_time
         ):
             logger.info("Задача %s уже выполнена или удалена", task["id"])
             return
@@ -101,7 +101,7 @@ async def restore_jobs(app):
         # Передаём в job полностью task + chat_id, чтобы send_task_reminder работал
         app.job_queue.run_once(
             send_task_reminder,
-            delay,
+            max(0, delay),
             data={
                 "task": task,
                 "chat_id": task["user_id"],

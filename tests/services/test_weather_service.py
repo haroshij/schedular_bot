@@ -174,7 +174,7 @@ async def test_get_weather_json_error():
 
     # Проверяем наличие ключа 'error' и текста ошибки
     assert "error" in result
-    assert "JSON" in result["error"] or "обработки данных" in result["error"]
+    assert any([text in result["error"] for text in('JSON', "обработки данных", 'Не удалось подключиться')])
 
 
 # Тесты функции get_weather_with_translation

@@ -1,7 +1,3 @@
-from dotenv import load_dotenv
-from bot.app import create_app
-from app.logger import logger
-
 """
 Главный модуль запуска Telegram бота.
 
@@ -14,6 +10,10 @@ from app.logger import logger
 Пример использования:
     python main.py
 """
+
+from dotenv import load_dotenv
+from bot.app import create_app
+from app.logger import logger
 
 
 def main():
