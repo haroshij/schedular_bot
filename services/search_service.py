@@ -60,7 +60,7 @@ async def search_duckduckgo(query: str) -> list[str]:
             "Ошибка поиска через DDGS (Dux Distributed Global Search)\n%s", e
         )
         # Возвращаем список с текстом ошибки
-        return [f"Ошибка поиска: {e}"]
+        return ["Произошла ошибка при поиске. Попробуйте позже."]
 
     # Список для форматированных результатов поиска
     output = []

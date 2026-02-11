@@ -1,5 +1,6 @@
 import os
 import asyncpg
+from urllib.parse import urlparse
 from datetime import datetime
 from typing import Optional, List, Dict
 
@@ -10,10 +11,15 @@ from app.logger import logger
 # Получаем URL базы данных из переменной окружения
 DATABASE_URL = os.getenv("DATABASE_URL")
 
+# Парсим наш URL, и создаём безопасный URL,
+# чтобы в логах его можно было передавать
+parsed = urlparse(DATABASE_URL)
+safe_url = f"{parsed.scheme}://*****@{parsed.hostname}:{parsed.port}/{parsed.path}"
+
 # Проверка, что переменная окружения установлена
 # Если DATABASE_URL пустой, логируем ошибку и возбуждаем исключение
 if not DATABASE_URL:
-    logger.error("Ошибка доступа к БД %s", DATABASE_URL)
+    logger.error("Ошибка доступа к БД %s", safe_url)
     raise RuntimeError("DATABASE_URL is not set")
 
 # Пул соединений с базой данных
@@ -36,7 +42,7 @@ def get_pool() -> asyncpg.Pool:
         RuntimeError: если пул соединений еще не создан
     """
     if _pool is None:
-        logger.error("Ошибка инициализации пула соединений с %s", DATABASE_URL)
+        logger.error("Ошибка инициализации пула соединений с %s", safe_url)
         raise RuntimeError("DB pool not initialized")
     return _pool
 
@@ -65,10 +71,8 @@ async def init_db() -> None:
     """
     global _pool
     if _pool is None:
-        logger.debug("Создание пула соединений с %s", DATABASE_URL)
-        _pool = await asyncpg.create_pool(
-            DATABASE_URL, min_size=2, max_size=5, timeout=10
-        )  # type: ignore
+        logger.debug("Создание пула соединений с %s", safe_url)
+        _pool = await asyncpg.create_pool(DATABASE_URL, min_size=2, max_size=5, timeout=10)  # type: ignore
 
     # Получаем соединение из пула для создания таблиц
     async with get_pool().acquire() as conn:

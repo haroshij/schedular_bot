@@ -48,7 +48,7 @@ async def _get_weather(city: str) -> dict:
         except Exception as e:
             # Логируем любые ошибки подключения или чтения ответа
             logger.warning("Ошибка подключения к %s\n%s", url, e)
-            return {"error": f"Не удалось подключиться: {e}"}
+            return {"error": "Не удалось подключиться"}
 
     try:
         # Извлекаем текущие погодные условия
