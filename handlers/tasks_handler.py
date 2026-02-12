@@ -1,10 +1,10 @@
 from datetime import datetime, timezone
 
 from telegram import Update
-from telegram.ext import CallbackContext, ConversationHandler
+from telegram.ext import CallbackContext
 
 from keyboard import MAIN_MENU
-from states import ADD_DATE, ADD_TEXT, POSTPONE_DATE
+from states import ADD_DATE, ADD_TEXT, POSTPONE_DATE, END
 from bot.jobs import send_task_reminder
 from handlers.common.common import cancel_menu_kb
 from services.tasks_service import create_task, change_task_time
@@ -47,7 +47,7 @@ async def add_task_date(update: Update, context: CallbackContext):
             reply_markup=cancel_menu_kb(),  # Кнопки "Отмена" и "В меню"
         )
         # Логируем попытку некорректного ввода
-        logger.warning(
+        logger.info(
             "Пользователь %s ввёл неверный формат или устаревшую дату: %s",
             update.effective_user.id,
             update.message.text,
@@ -97,13 +97,11 @@ async def add_task_text(update: Update, context: CallbackContext):
             "❌ Введённая дата уже прошла. Задача не добавлена. Пожалуйста, попробуйте снова",
             reply_markup=MAIN_MENU,
         )
-        # Логируем устаревшую дату
-        logger.warning(
-            "Пользователь %s ввёл устаревшую дату: %s", user_id, scheduled_time
-        )
+
+        logger.info("Пользователь %s ввёл устаревшую дату: %s", user_id, scheduled_time)
         # Очищаем временные данные пользователя
         context.user_data.clear()
-        return ConversationHandler.END
+        return END
 
     # Создаём задачу в базе данных
     task = await create_task(user_id, title, scheduled_time)
@@ -123,7 +121,7 @@ async def add_task_text(update: Update, context: CallbackContext):
     await update.message.reply_text("✅ Задача добавлена", reply_markup=MAIN_MENU)
     # Очищаем временные данные пользователя
     context.user_data.clear()
-    return ConversationHandler.END
+    return END
 
 
 # Перенос задачи
@@ -187,4 +185,4 @@ async def postpone_date(update: Update, context: CallbackContext):
 
     # Подтверждаем пользователю, что время задачи изменено
     await update.message.reply_text("⏳ Время изменено", reply_markup=MAIN_MENU)
-    return ConversationHandler.END
+    return END

@@ -1,9 +1,10 @@
 from telegram import Update
-from telegram.ext import CallbackContext, ConversationHandler
+from telegram.ext import CallbackContext
 
 from keyboard import weather_actions_kb
 from services.weather_service import get_weather_with_translation
-from database import set_user_city  # Функция для сохранения города пользователя в БД
+from database import set_user_city
+from states import END
 from app.decorators import log_handler
 from app.logger import logger
 
@@ -43,7 +44,7 @@ async def weather_handler(update: Update, _: CallbackContext):
         )
         # Логируем ошибку получения погоды
         logger.warning("Ошибка получения погоды: %s", data["error"])
-        return ConversationHandler.END  # Завершаем разговор
+        return END  # Завершаем разговор
 
     # Сохраняем город в базе после успешного получения прогноза
     logger.info("Запись города %s в базу данных для пользователя %s", city, user_id)
@@ -62,4 +63,4 @@ async def weather_handler(update: Update, _: CallbackContext):
     )
 
     # Завершаем разговор после отправки прогноза
-    return ConversationHandler.END
+    return END

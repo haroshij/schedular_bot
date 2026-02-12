@@ -6,6 +6,7 @@ from handlers.callbacks.callbacks_tasks import handle_tasks_callbacks
 from handlers.callbacks.callbacks_weather import handle_weather_callbacks
 from handlers.callbacks.callbacks_search import handle_search_callbacks
 from app.decorators import log_handler
+from app.logger import logger
 
 
 @log_handler
@@ -31,6 +32,7 @@ async def callbacks(update: Update, context: CallbackContext):
     # Получаем объект callback-запроса
     query = update.callback_query
     if not query:  # Если callback отсутствует — ничего не делаем
+        logger.warning("Нет запроса в update!")
         return None
 
     # Отвечаем на callback, чтобы убрать "часики" в интерфейсе
@@ -51,4 +53,5 @@ async def callbacks(update: Update, context: CallbackContext):
             return result
 
     # Если ни один обработчик не сработал — возвращаем None
+    logger.warning("Ни один обработчик не сработал!")
     return None

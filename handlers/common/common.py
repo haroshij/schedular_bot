@@ -1,8 +1,9 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import CallbackContext, ConversationHandler
+from telegram.ext import CallbackContext
 from keyboard import MAIN_MENU
 from app.logger import logger
 from app.decorators import log_handler
+from states import END
 
 
 def cancel_menu_kb():
@@ -15,7 +16,6 @@ def cancel_menu_kb():
     Returns:
         InlineKeyboardMarkup: Объект клавиатуры Telegram.
     """
-    # Формируем клавиатуру с двумя рядами кнопок
     return InlineKeyboardMarkup(
         [
             [InlineKeyboardButton("↩️ В меню", callback_data="menu")],
@@ -64,7 +64,7 @@ async def cancel(update: Update, context: CallbackContext):
             "Действие отменено 👍\nВыбери действие 👇", reply_markup=MAIN_MENU
         )
     else:
-        # Если действие вызвано обычным сообщением
+        # Если действие вызвано обычным сообщением (ПОКА НЕ ИСПОЛЬЗУЕТСЯ)
         await update.message.reply_text(
             "Действие отменено 👍\nВыбери действие 👇", reply_markup=MAIN_MENU
         )
@@ -72,4 +72,4 @@ async def cancel(update: Update, context: CallbackContext):
     # Очищаем временные данные пользователя
     logger.info("Удалены временные данные пользователя %s", update.effective_user.id)
     context.user_data.clear()
-    return ConversationHandler.END
+    return END

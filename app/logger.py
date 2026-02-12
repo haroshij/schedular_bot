@@ -1,6 +1,3 @@
-import logging
-import sys
-
 """
 Модуль для настройки логирования бота.
 
@@ -12,23 +9,23 @@ import sys
     logger.info("Сообщение для лога")
 """
 
-# Создаём объект логгера для нашего бота с уникальным именем
-logger = logging.getLogger(
-    "schedular_bot"
-)  # Имя логгера, чтобы различать источники логов
+import logging
+import sys
 
-# Устанавливаем уровень логирования
+# Создаём объект логгера для нашего бота с уникальным именем
+logger = logging.getLogger("schedular_bot")
+
 logger.setLevel(logging.INFO)
 
 # Создаём форматтер для логов, чтобы сообщения были читабельными
 formatter = logging.Formatter(
-    "%(asctime)s | %(levelname)s | %(name)s | %(message)s",  # Формат сообщения
-    datefmt="%Y-%m-%d %H:%M:%S",  # Формат времени
+    "%(asctime)s | %(levelname)s | %(name)s | %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
 )
 
 # Создаём обработчик, который выводит логи в консоль (stdout)
 stream_handler = logging.StreamHandler(sys.stdout)
-stream_handler.setFormatter(formatter)  # Применяем форматтер к обработчику
+stream_handler.setFormatter(formatter)
 logger.addHandler(stream_handler)  # Добавляем обработчик к логгеру
 
 # Можно раскомментировать, если нужен лог-файл

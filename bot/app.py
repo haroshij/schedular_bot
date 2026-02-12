@@ -60,25 +60,20 @@ def create_app():
     Raises:
         RuntimeError: Если TELEGRAM_TOKEN не установлен в переменных окружения.
     """
-    # Получаем токен из переменных окружения
     token = os.getenv("TELEGRAM_TOKEN")
     if not token:
         raise RuntimeError("TELEGRAM_TOKEN не установлен в переменных окружения")
 
-    # Асинхронная функция, выполняемая при старте бота
     async def on_startup(app):
-        # Логируем начало инициализации БД
         logger.info("Инициализация БД...")
-        await init_db()  # Подключаемся к БД
-        # Восстанавливаем запланированные задачи из БД
+        await init_db()
         logger.info("Восстановление напоминаний по задачам...")
         await restore_jobs(app)
 
     # Асинхронная функция, выполняемая при остановке бота
     async def on_shutdown(_):
-        # Логируем закрытие соединений с БД
         logger.info("Закрытие соединений с БД...")
-        await close_db()  # Закрываем соединения с БД
+        await close_db()
         logger.info("Бот остановлен")
 
     # Создаём экземпляр приложения бота
@@ -90,12 +85,10 @@ def create_app():
         .build()  # Создаём объект Application
     )
 
-    # ---------- COMMANDS ----------
     # Хендлер для команды /start
     app.add_handler(CommandHandler("start", start))
 
-    # ---------- ADD TASK ----------
-    # Разговор для добавления новой задачи
+    # Хендлер для добавления новой задачи
     app.add_handler(
         ConversationHandler(
             entry_points=[CallbackQueryHandler(callbacks, pattern="^add_task$")],
@@ -118,8 +111,7 @@ def create_app():
         )
     )
 
-    # ---------- POSTPONE ----------
-    # Разговор для переноса даты задачи
+    # Хендлер для переноса даты задачи
     app.add_handler(
         ConversationHandler(
             entry_points=[CallbackQueryHandler(callbacks, pattern="^postpone:")],
@@ -136,8 +128,7 @@ def create_app():
         )
     )
 
-    # ---------- SEARCH ----------
-    # Разговор для поиска задач
+    # Хендлер для поиска задач
     app.add_handler(
         ConversationHandler(
             entry_points=[CallbackQueryHandler(callbacks, pattern="^search$")],
@@ -154,7 +145,6 @@ def create_app():
         )
     )
 
-    # ---------- WEATHER ----------
     # Разговор для получения прогноза погоды
     app.add_handler(
         ConversationHandler(
@@ -175,7 +165,6 @@ def create_app():
         )
     )
 
-    # ---------- CALLBACKS ----------
     # Универсальный хендлер для всех callback-запросов
     app.add_handler(CallbackQueryHandler(callbacks))
 

@@ -49,7 +49,6 @@ def log_handler(func):
             elif update.callback_query:
                 callback_data = update.callback_query.data
 
-            # Логируем вход пользователя в хендлер
             logger.info(
                 "Пользователь %s вызвал %s | message: %s | callback: %s",
                 user_id,
@@ -58,10 +57,8 @@ def log_handler(func):
                 callback_data,
             )
 
-            # Выполняем сам хендлер
             result = await func(update, context, *args, **kwargs)
 
-            # Логируем успешное завершение хендлера
             logger.debug(
                 "Хендлер %s завершился успешно для пользователя %s",
                 func.__name__,
@@ -69,7 +66,6 @@ def log_handler(func):
             )
             return result
         except Exception as e:
-            # Логируем любую ошибку с полным traceback
             logger.exception(
                 "Ошибка в хендлере %s для пользователя %s\n%s",
                 func.__name__,

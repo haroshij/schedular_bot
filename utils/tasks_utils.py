@@ -37,41 +37,30 @@ def parse_datetime(text: str):
 
     logger.debug("Запуск парсинга даты")
 
-    # ------------------------------------------------------------------
     # 1. Строгий формат: YYYY-MM-DD HH:MM
-    # ------------------------------------------------------------------
     try:
         logger.debug("Парсинг даты прошёл успешно")
         return datetime.strptime(text, "%Y-%m-%d %H:%M")
     except ValueError:
-        # Если формат не подошёл — переходим к следующим вариантам
         pass
 
-    # ------------------------------------------------------------------
     # 2. Относительная дата: "сегодня HH:MM"
-    # ------------------------------------------------------------------
     if text.startswith("сегодня"):
-        # Отделяем часть со временем
         time_part = text.replace("сегодня", "").strip()
         try:
-            logger.debug("Парсинг даты прошёл успешно")
             hour, minute = map(int, time_part.split(":"))
-
-            # Подставляем введённое время в текущую дату
+            logger.debug("Парсинг даты прошёл успешно")
             return now.replace(hour=hour, minute=minute, second=0, microsecond=0)
         except ValueError:
             pass
 
-    # ------------------------------------------------------------------
     # 3. Относительная дата: "завтра HH:MM"
-    # ------------------------------------------------------------------
     if text.startswith("завтра"):
         # Отделяем часть со временем
         time_part = text.replace("завтра", "").strip()
         try:
-            logger.info("Парсинг даты прошёл успешно")
             hour, minute = map(int, time_part.split(":"))
-
+            logger.info("Парсинг даты прошёл успешно")
             # Увеличиваем текущую дату на один день и подставляем время
             return (now + timedelta(days=1)).replace(
                 hour=hour, minute=minute, second=0, microsecond=0

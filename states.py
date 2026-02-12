@@ -1,6 +1,6 @@
-from telegram.ext import ConversationHandler
-
 """Состояния бота для ConversationHandler"""
+
+from telegram.ext import ConversationHandler
 
 # Состояние, в котором бот ожидает от пользователя дату/время для новой задачи.
 ADD_DATE = 1
