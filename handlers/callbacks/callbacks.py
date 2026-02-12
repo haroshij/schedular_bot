@@ -53,5 +53,4 @@ async def callbacks(update: Update, context: CallbackContext):
             return result
 
     # Если ни один обработчик не сработал — возвращаем None
-    logger.warning("Ни один обработчик не сработал!")
     return None
