@@ -36,6 +36,9 @@ WEATHER_TRANSLATIONS = {
     "Light snow shower": "Лёгкий снежный дождь",
     "Moderate snow": "Умеренный снег",
     "Heavy snow": "Сильный снег",
+    "Snow shower, heavy snow shower": "Снегопад, сильный снегопад",
+    "Snow shower": "Снегопад",
+    "Heavy snow shower": "Сильный снегопад",
     "Snow": "Снег",
     "Blizzard": "Метель",
     # Смешанные осадки
