@@ -29,10 +29,11 @@ async def _get_weather(city: str) -> dict:
     # Формируем URL запроса к сервису wttr.in в формате JSON
     url = f"https://wttr.in/{city}?format=j1"
 
+    timeout = aiohttp.ClientTimeout(total=10)
     # Создаём HTTP-сессию для выполнения асинхронного запроса
-    async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession(timeout=timeout) as session:
         # Логируем попытку соединения с внешним сервисом
-        logger.info("Попытка соединения с %s...", url)
+        logger.debug("Попытка соединения с %s...", url)
         try:
             # Выполняем GET-запрос
             async with session.get(url) as resp:
@@ -69,11 +70,6 @@ async def _get_weather(city: str) -> dict:
         # Логируем ошибки обработки структуры ответа
         logger.warning("Ошибка обработки данных\n%s", e)
         return {"error": f"Ошибка обработки данных: {e}"}
-
-
-# ------------------------------------------------------------------
-# ДОБАВЛЕННАЯ ФУНКЦИЯ (для callbacks.py)
-# ------------------------------------------------------------------
 
 
 async def get_weather_with_translation(city: str) -> dict:
