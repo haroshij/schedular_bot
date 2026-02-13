@@ -1,12 +1,15 @@
 from functools import wraps
-from app.logger import logger
-from telegram.ext import CallbackContext, ConversationHandler
+
+from telegram.ext import CallbackContext
 from telegram import Update
+
+from app.logger import logger
+from states import END
 
 
 def log_handler(func):
     """
-    Декоратор для логирования действий пользователя в асинхронных хендлерах Telegram.
+    Декоратор для логирования действий пользователя в хендлерах Telegram.
 
     Логирует следующие события:
     - Вход пользователя в хендлер (user_id, текст сообщения или callback_data)
@@ -34,22 +37,19 @@ def log_handler(func):
         Returns:
             Любое значение, возвращаемое оригинальным хендлером, либо ConversationHandler.END при ошибке
         """
-        user_id = None  # id пользователя
-        user_text = None  # текст сообщения пользователя
-        callback_data = None  # данные callback кнопки
+        user_id = None
+        user_text = None
+        callback_data = None
 
         try:
-            # Получаем id пользователя, если он есть
             if update.effective_user:
                 user_id = update.effective_user.id
-
-            # Получаем текст сообщения или данные callback, если они есть
             if update.message:
                 user_text = update.message.text
             elif update.callback_query:
                 callback_data = update.callback_query.data
 
-            logger.info(
+            logger.debug(
                 "Пользователь %s вызвал %s | message: %s | callback: %s",
                 user_id,
                 func.__name__,
@@ -66,14 +66,14 @@ def log_handler(func):
             )
             return result
         except Exception as e:
-            logger.exception(
+            logger.error(
                 "Ошибка в хендлере %s для пользователя %s\n%s",
                 func.__name__,
                 user_id,
                 e,
             )
 
-            # Возвращаем ConversationHandler.END, чтобы корректно завершить разговор при ошибке
-            return ConversationHandler.END
+            # Возвращаем END, чтобы корректно завершить разговор при ошибке
+            return END
 
     return wrapper
