@@ -70,19 +70,17 @@ def create_app():
         logger.info("Восстановление напоминаний по задачам...")
         await restore_jobs(app)
 
-    # Асинхронная функция, выполняемая при остановке бота
     async def on_shutdown(_):
         logger.info("Закрытие соединений с БД...")
         await close_db()
         logger.info("Бот остановлен")
 
-    # Создаём экземпляр приложения бота
     app = (
         ApplicationBuilder()
-        .token(token)  # Устанавливаем токен
-        .post_init(on_startup)  # Функция при старте
-        .post_shutdown(on_shutdown)  # Функция при остановке
-        .build()  # Создаём объект Application
+        .token(token)
+        .post_init(on_startup)
+        .post_shutdown(on_shutdown)
+        .build()
     )
 
     # Хендлер для команды /start
@@ -93,11 +91,9 @@ def create_app():
         ConversationHandler(
             entry_points=[CallbackQueryHandler(callbacks, pattern="^add_task$")],
             states={
-                # Ожидаем ввод даты задачи
                 ADD_DATE: [
                     MessageHandler(filters.TEXT & ~filters.COMMAND, add_task_date)
                 ],
-                # Ожидаем ввод текста задачи
                 ADD_TEXT: [
                     MessageHandler(filters.TEXT & ~filters.COMMAND, add_task_text)
                 ],
