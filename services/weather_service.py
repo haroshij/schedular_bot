@@ -32,7 +32,6 @@ async def _get_weather(city: str) -> dict:
     timeout = aiohttp.ClientTimeout(total=10)
     # Создаём HTTP-сессию для выполнения асинхронного запроса
     async with aiohttp.ClientSession(timeout=timeout) as session:
-        # Логируем попытку соединения с внешним сервисом
         logger.debug("Попытка соединения с %s...", url)
         try:
             # Выполняем GET-запрос
@@ -61,13 +60,11 @@ async def _get_weather(city: str) -> dict:
         # Получаем температуру и приводим её к float
         temp = float(current["temp_C"])
 
-        # Логируем успешную обработку данных
         logger.info("Обработка данных, полученных с %s, прошла успешно", url)
 
         # Возвращаем данные в унифицированном формате
         return {"weather": [{"description": description}], "main": {"temp": temp}}
     except Exception as e:
-        # Логируем ошибки обработки структуры ответа
         logger.warning("Ошибка обработки данных\n%s", e)
         return {"error": f"Ошибка обработки данных: {e}"}
 
