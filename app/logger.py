@@ -3,21 +3,16 @@
 
 Логирование выполняется через стандартный модуль logging.
 Можно менять уровень логов, формат, а также вывод в консоль и/или файл.
-
-Использование:
-    from app.logger import logger
-    logger.info("Сообщение для лога")
 """
 
-import logging
 import sys
+import logging
 
 # Создаём объект логгера для нашего бота с уникальным именем
 logger = logging.getLogger("schedular_bot")
-
 logger.setLevel(logging.INFO)
 
-# Создаём форматтер для логов, чтобы сообщения были читабельными
+# Создаём форматтер для логов
 formatter = logging.Formatter(
     "%(asctime)s | %(levelname)s | %(name)s | %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
