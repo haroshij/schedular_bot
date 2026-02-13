@@ -1,5 +1,6 @@
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import CallbackContext
+
 from keyboard import MAIN_MENU, task_actions, tasks_inline_menu
 from handlers.common.common import cancel_menu_kb
 from states import ADD_DATE, POSTPONE_DATE
@@ -37,11 +38,9 @@ async def handle_tasks_callbacks(update: Update, context: CallbackContext, data:
     """
 
     query = update.callback_query
-    user_id = update.effective_user.id  # ID пользователя, вызвавшего callback
+    user_id = update.effective_user.id
 
-    # add task
     if data == "add_task":
-        # Просим пользователя ввести дату и время новой задачи
         await query.edit_message_text(
             "Введите дату и время ⏰\n\n"
             "Примеры:\n"
@@ -53,13 +52,11 @@ async def handle_tasks_callbacks(update: Update, context: CallbackContext, data:
         logger.info("Пользователь %s пробует создать задачу", user_id)
         return ADD_DATE
 
-    # postpone
     if data.startswith("postpone:"):
-        task_id = data.split(":", 1)[1]  # Получаем ID задачи
+        task_id = data.split(":", 1)[1]
         task = await get_task(task_id)
         logger.info("Пользователь %s пробует перенести задачу %s", user_id, task_id)
 
-        # Проверяем принадлежность задачи пользователю
         if not task or task["user_id"] != user_id:
             await query.edit_message_text(
                 "❌ Эта задача не принадлежит вам", reply_markup=MAIN_MENU
@@ -82,7 +79,6 @@ async def handle_tasks_callbacks(update: Update, context: CallbackContext, data:
         )
         return POSTPONE_DATE
 
-    # nearest_task
     if data == "nearest_task":
         task = await get_nearest_user_task(user_id)
         logger.info(
@@ -106,7 +102,6 @@ async def handle_tasks_callbacks(update: Update, context: CallbackContext, data:
             )
         return None
 
-    # all tasks
     if data == "all_tasks":
         tasks = await get_tasks(user_id)
         logger.info("Пользователь %s пробует получить список всех задач", user_id)
@@ -125,7 +120,6 @@ async def handle_tasks_callbacks(update: Update, context: CallbackContext, data:
             )
         return None
 
-    # select task
     if data.startswith("task:"):
         task_id = data.split(":", 1)[1]
         task = await get_task(task_id)
@@ -147,7 +141,6 @@ async def handle_tasks_callbacks(update: Update, context: CallbackContext, data:
         logger.info("Пользователь %s получил информацию о задаче %s", user_id, task_id)
         return None
 
-    # done
     if data.startswith("done:"):
         task_id = data.split(":", 1)[1]
         logger.info(
@@ -168,7 +161,6 @@ async def handle_tasks_callbacks(update: Update, context: CallbackContext, data:
             )
             return None
 
-        # Отмечаем задачу как выполненную
         await complete_task(task_id)
         await query.edit_message_text("✅ Задача выполнена", reply_markup=MAIN_MENU)
         logger.info(

@@ -28,14 +28,12 @@ async def search_handler(update: Update, _: CallbackContext):
     # Получаем текст запроса от пользователя
     query = update.message.text.strip()
 
-    # Проверяем корректность запроса
     if not validate_search_query(query):
-        # Если запрос некорректный, отправляем предупреждение
         await update.message.reply_text(
             "❌ Запрос некорректный. Попробуйте другой.",
-            reply_markup=cancel_menu_kb(),  # Кнопки "Отмена" и "В меню"
+            reply_markup=cancel_menu_kb(),
         )
-        logger.warning(
+        logger.info(
             "Пользователь %s ввёл некорректный запрос: %s",
             update.effective_user.id,
             query,
@@ -46,13 +44,13 @@ async def search_handler(update: Update, _: CallbackContext):
     results = await search_duckduckgo(query)
 
     # Формируем текст ответа из первых 5 результатов
-    text = "\n\n".join(results[:5])
+    text = """Вот, что найдено по вашему запросу.
+    Для повторного поиска отправьте новый запрос\n\n""" + "\n\n".join(results[:5])
 
     # Отправляем результаты пользователю
     await update.message.reply_text(
         text,
-        reply_markup=cancel_menu_kb(),  # Добавляем кнопки для возврата в меню
+        reply_markup=cancel_menu_kb(),
     )
 
-    # Возвращаем состояние SEARCH_QUERY для возможности нового поиска
     return SEARCH_QUERY

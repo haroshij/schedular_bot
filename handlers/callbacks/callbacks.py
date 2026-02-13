@@ -35,22 +35,18 @@ async def callbacks(update: Update, context: CallbackContext):
         logger.warning("Нет запроса в update!")
         return None
 
-    # Отвечаем на callback, чтобы убрать "часики" в интерфейсе
+    # Отвечаем на callback, чтобы убрать "часы ожидания" в интерфейсе
     await query.answer()
-    data = query.data  # Сохраняем данные callback для передачи обработчикам
+    data = query.data
 
-    # Последовательно пробуем обработать callback всеми зарегистрированными обработчиками
     for handler in (
         handle_menu_callbacks,
         handle_tasks_callbacks,
         handle_weather_callbacks,
         handle_search_callbacks,
     ):
-        # Передаем update, context и data в обработчик
         result = await handler(update, context, data)
-        # Если обработчик вернул что-то — прекращаем цикл и возвращаем результат
         if result is not None:
             return result
 
-    # Если ни один обработчик не сработал — возвращаем None
     return None

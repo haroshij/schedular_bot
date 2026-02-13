@@ -59,10 +59,7 @@ async def send_task_reminder(context: CallbackContext):
             "Напоминание отправлено пользователю %s для задачи %s", chat_id, task["id"]
         )
     except Exception as e:
-        # Логируем исключение, чтобы не потерять ошибку
-        logger.exception(
-            "Ошибка при отправке напоминания для задачи %s\n%s", task["id"], e
-        )
+        logger.error("Ошибка при отправке напоминания для задачи %s\n%s", task["id"], e)
 
 
 async def restore_jobs(app):
@@ -78,15 +75,13 @@ async def restore_jobs(app):
         app (telegram.ext.Application): Экземпляр Application бота, содержит job_queue.
     """
     logger.debug("Формирование напоминаний для всех невыполненных задач...")
-    now = datetime.now(timezone.utc)  # текущее UTC время
-    tasks = await get_all_pending_tasks()  # получаем все pending задачи из БД
+    now = datetime.now(timezone.utc)
+    tasks = await get_all_pending_tasks()
 
     for task in tasks:
-        # Пропускаем задачи, которые уже должны были сработать
         if task["scheduled_time"] <= now:
             continue
 
-        # Формируем уникальное имя job
         job_name = f"task_{task['id']}"
 
         # Удаляем старые job’ы с таким именем, чтобы не было дубликатов

@@ -1,5 +1,6 @@
 from telegram import Update
 from telegram.ext import CallbackContext
+
 from handlers.common.common import cancel_menu_kb
 from states import WEATHER_CITY
 from database import get_user_city
@@ -33,11 +34,9 @@ async def handle_weather_callbacks(update: Update, _: CallbackContext, data: str
     logger.info("Пользователь %s запросил погоду", user_id)
 
     if data in ("weather", "weather_change"):
-        # Получаем город пользователя
         city = await get_user_city(user_id)
 
         if city and data == "weather":
-            # Получаем погоду с переводом
             weather = await get_weather_with_translation(city)
 
             if "error" in weather:
@@ -50,7 +49,6 @@ async def handle_weather_callbacks(update: Update, _: CallbackContext, data: str
                     f"🌡 {round(weather['temp'])}°C"
                 )
 
-            # Отправляем информацию о погоде пользователю
             await query.edit_message_text(text, reply_markup=weather_actions_kb())
             logger.info("Отправлена погода пользователю %s | city=%s", user_id, city)
             return None
