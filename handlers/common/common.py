@@ -18,7 +18,6 @@ def cancel_menu_kb():
     """
     return InlineKeyboardMarkup(
         [
-            [InlineKeyboardButton("↩️ В меню", callback_data="menu")],
             [InlineKeyboardButton("❌ Отмена", callback_data="cancel")],
         ]
     )

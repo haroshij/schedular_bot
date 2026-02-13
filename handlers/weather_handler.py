@@ -55,9 +55,7 @@ async def weather_handler(update: Update, _: CallbackContext):
 
     # Формируем и отправляем сообщение пользователю с погодой
     await update.message.reply_text(
-        f"🌤 {city}\n"
-        f"{desc}\n"
-        f"🌡 Температура: {round(temp)}°C",
+        f"🌤 {city}\n{desc}\n🌡 Температура: {round(temp)}°C",
         reply_markup=weather_actions_kb(),
     )
 

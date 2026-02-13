@@ -100,9 +100,7 @@ def create_app():
             },
             # fallbacks для отмены или возврата в меню
             fallbacks=[
-                CommandHandler("cancel", cancel),
                 CallbackQueryHandler(cancel, pattern="^cancel$"),
-                CallbackQueryHandler(cancel, pattern="^menu$"),
             ],
         )
     )
@@ -117,9 +115,7 @@ def create_app():
                 ]
             },
             fallbacks=[
-                CommandHandler("cancel", cancel),
                 CallbackQueryHandler(cancel, pattern="^cancel$"),
-                CallbackQueryHandler(cancel, pattern="^menu$"),
             ],
         )
     )
@@ -134,9 +130,7 @@ def create_app():
                 ]
             },
             fallbacks=[
-                CommandHandler("cancel", cancel),
                 CallbackQueryHandler(cancel, pattern="^cancel$"),
-                CallbackQueryHandler(cancel, pattern="^menu$"),
             ],
         )
     )
@@ -156,7 +150,6 @@ def create_app():
             fallbacks=[
                 CommandHandler("cancel", cancel),
                 CallbackQueryHandler(cancel, pattern="^cancel$"),
-                CallbackQueryHandler(cancel, pattern="^menu$"),
             ],
         )
     )

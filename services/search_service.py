@@ -55,7 +55,7 @@ async def search_duckduckgo(query: str) -> list[str]:
         # чтобы не блокировать asyncio event loop
         results = await asyncio.wait_for(
             loop.run_in_executor(None, search_ddgs),  # type: ignore
-            timeout=10  # таймаут в секундах
+            timeout=10,  # таймаут в секундах
         )
     except Exception as e:
         # Логируем ошибку поиска

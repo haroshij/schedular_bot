@@ -40,15 +40,10 @@ def test_cancel_menu_kb():
     assert isinstance(kb, InlineKeyboardMarkup)
 
     # Проверяем количество строк в клавиатуре
-    assert len(kb.inline_keyboard) == 2
+    assert len(kb.inline_keyboard) == 1
 
-    # Получаем кнопки из клавиатуры
-    menu_btn = kb.inline_keyboard[0][0]
-    cancel_btn = kb.inline_keyboard[1][0]
-
-    # Проверяем текст и callback_data кнопки "В меню"
-    assert menu_btn.text == "↩️ В меню"
-    assert menu_btn.callback_data == "menu"
+    # Получаем кнопку из клавиатуры
+    cancel_btn = kb.inline_keyboard[0][0]
 
     # Проверяем текст и callback_data кнопки "Отмена"
     assert cancel_btn.text == "❌ Отмена"
