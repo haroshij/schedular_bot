@@ -83,10 +83,8 @@ def create_app():
         .build()
     )
 
-    # Хендлер для команды /start
     app.add_handler(CommandHandler("start", start))
 
-    # Хендлер для добавления новой задачи
     app.add_handler(
         ConversationHandler(
             entry_points=[CallbackQueryHandler(callbacks, pattern="^add_task$")],
@@ -98,14 +96,12 @@ def create_app():
                     MessageHandler(filters.TEXT & ~filters.COMMAND, add_task_text)
                 ],
             },
-            # fallbacks для отмены или возврата в меню
             fallbacks=[
                 CallbackQueryHandler(cancel, pattern="^cancel$"),
             ],
         )
     )
 
-    # Хендлер для переноса даты задачи
     app.add_handler(
         ConversationHandler(
             entry_points=[CallbackQueryHandler(callbacks, pattern="^postpone:")],
@@ -120,7 +116,6 @@ def create_app():
         )
     )
 
-    # Хендлер для поиска задач
     app.add_handler(
         ConversationHandler(
             entry_points=[CallbackQueryHandler(callbacks, pattern="^search$")],
@@ -135,7 +130,6 @@ def create_app():
         )
     )
 
-    # Разговор для получения прогноза погоды
     app.add_handler(
         ConversationHandler(
             entry_points=[
