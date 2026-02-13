@@ -42,6 +42,7 @@ WEATHER_TRANSLATIONS = {
     "Snow": "Снег",
     "Blizzard": "Метель",
     # Смешанные осадки
+    "Light rain, mist": "Небольшой дождь, туман",
     "Light snow, mist": "Лёгкий снег, лёгкий туман",
     "Sleet": "Мокрый снег",
     "Light sleet": "Лёгкий мокрый снег",
