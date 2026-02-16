@@ -1,5 +1,5 @@
 import aiohttp
-from asyncio import TimeoutError
+import asyncio
 from urllib.parse import quote
 
 from utils.weather_utils import validate_city
@@ -37,46 +37,63 @@ async def _get_weather(city: str) -> dict:
         sock_connect=20,
         sock_read=20,
     )
-    headers = {"User-Agent": "Mozilla/5.0"}
-    # Создаём HTTP-сессию для выполнения асинхронного запроса
-    async with aiohttp.ClientSession(timeout=timeout, headers=headers) as session:
-        logger.debug("Попытка соединения с %s...", url)
-        try:
-            # Выполняем GET-запрос
-            async with session.get(url) as resp:
-                if resp.status != 200:
-                    logger.warning(
-                        "Ошибка получения погоды с %s. Статус: %s", url, resp.status
-                    )
-                    return {"error": f"Ошибка получения погоды ({resp.status})"}
 
-                data = await resp.json()
-        except Exception as e:
-            logger.exception("Ошибка подключения к %s\n%s", url, e)
-            return {"error": "Не удалось подключиться"}
+    headers = {"User-Agent": "Mozilla/5.0"}
+
+    retries = 5
+    delay = 0.25  # стартовая задержка между попытками
+
+    async with aiohttp.ClientSession(timeout=timeout, headers=headers) as session:
+        for attempt in range(1, retries + 1):
+            logger.debug("Попытка %s соединения с %s", attempt, url)
+
+            try:
+                async with session.get(url) as resp:
+                    if resp.status != 200:
+                        logger.warning(
+                            "Ошибка получения погоды с %s. Статус: %s",
+                            url,
+                            resp.status,
+                        )
+                        return {"error": f"Ошибка получения погоды ({resp.status})"}
+
+                    data = await resp.json()
+                    break  # успех — выходим из retry
+
+            except (TimeoutError, aiohttp.ClientError) as e:
+                logger.warning(
+                    "Ошибка подключения к %s (попытка %s/%s): \n%s",
+                    url,
+                    attempt,
+                    retries,
+                    e,
+                )
+
+                if attempt == retries:
+                    return {"error": "Не удалось подключиться к сервису погоды"}
+
+                await asyncio.sleep(delay)
+                delay *= 2  # exponential backoff (1 → 2 → 4)
+
+            except Exception as e:
+                logger.exception("Неожиданная ошибка при запросе к %s\n%s", url, e)
+                return {"error": "Внутренняя ошибка"}
 
     try:
-        # Извлекаем текущие погодные условия
         current = data["current_condition"][0]
         description = current["weatherDesc"][0]["value"]
         temp = float(current["temp_C"])
 
-        logger.debug("Обработка данных, полученных с %s, прошла успешно", url)
+        logger.debug("Обработка данных с %s прошла успешно", url)
 
-        # Возвращаем данные в унифицированном формате
-        return {"weather": [{"description": description}], "main": {"temp": temp}}
-
-    except TimeoutError as e:
-        logger.exception("Неожиданная ошибка", e, sep='\n')
-        return {"error": "Сервис погоды не отвечает"}
-
-    except aiohttp.ClientError as e:
-        logger.exception("Неожиданная ошибка", e, sep='\n')
-        return {"error": f"Ошибка сети: {e}"}
+        return {
+            "weather": [{"description": description}],
+            "main": {"temp": temp},
+        }
 
     except Exception as e:
-        logger.exception("Неожиданная ошибка", e, sep='\n')
-        return {"error": "Внутренняя ошибка"}
+        logger.exception("Ошибка обработки ответа wttr.in\n%s", e)
+        return {"error": "Ошибка обработки данных погоды"}
 
 
 async def get_weather_with_translation(city: str) -> dict:
