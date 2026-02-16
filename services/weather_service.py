@@ -30,7 +30,12 @@ async def _get_weather(city: str) -> dict:
     # Формируем URL запроса к сервису wttr.in в формате JSON
     url = f"https://wttr.in/{quote(city)}?format=j1"
 
-    timeout = aiohttp.ClientTimeout(total=20)
+    timeout = aiohttp.ClientTimeout(
+        total=20,
+        connect=10,
+        sock_connect=10,
+        sock_read=20,
+    )
     headers = {"User-Agent": "Mozilla/5.0"}
     # Создаём HTTP-сессию для выполнения асинхронного запроса
     async with aiohttp.ClientSession(timeout=timeout, headers=headers) as session:
