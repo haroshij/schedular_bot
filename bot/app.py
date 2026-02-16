@@ -148,8 +148,6 @@ def create_app():
         )
     )
 
-    # Универсальный хендлер для всех callback-запросов
     app.add_handler(CallbackQueryHandler(callbacks))
 
-    # Возвращаем готовый объект бота
     return app

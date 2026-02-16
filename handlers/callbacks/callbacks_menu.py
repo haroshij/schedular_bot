@@ -19,7 +19,7 @@ async def handle_menu_callbacks(update: Update, _: CallbackContext, data: str):
         None: Всегда возвращает None.
     """
 
-    query = update.callback_query  # Получаем объект callback
+    query = update.callback_query
 
     if data == "menu":
         await query.edit_message_text("Выбери действие 👇", reply_markup=MAIN_MENU)

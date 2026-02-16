@@ -68,7 +68,7 @@ async def handle_tasks_callbacks(update: Update, context: CallbackContext, data:
             )
             return None
 
-        context.user_data["task_id"] = task_id  # Сохраняем ID задачи в контексте
+        context.user_data["task_id"] = task_id
         await query.edit_message_text(
             "Введите новую дату и время ⏰\n\n"
             "Примеры:\n"
