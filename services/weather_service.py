@@ -1,4 +1,5 @@
 import aiohttp
+from urllib.parse import quote
 
 from utils.weather_utils import validate_city
 from app.logger import logger
@@ -27,40 +28,34 @@ async def _get_weather(city: str) -> dict:
         dict: Словарь с данными о погоде или словарь с описанием ошибки.
     """
     # Формируем URL запроса к сервису wttr.in в формате JSON
-    url = f"https://wttr.in/{city}?format=j1"
+    url = f"https://wttr.in/{quote(city)}?format=j1"
 
     timeout = aiohttp.ClientTimeout(total=20)
+    headers = {"User-Agent": "Mozilla/5.0"}
     # Создаём HTTP-сессию для выполнения асинхронного запроса
-    async with aiohttp.ClientSession(timeout=timeout) as session:
+    async with aiohttp.ClientSession(timeout=timeout, headers=headers) as session:
         logger.debug("Попытка соединения с %s...", url)
         try:
             # Выполняем GET-запрос
             async with session.get(url) as resp:
-                # Проверяем HTTP-статус ответа
                 if resp.status != 200:
                     logger.warning(
                         "Ошибка получения погоды с %s. Статус: %s", url, resp.status
                     )
                     return {"error": f"Ошибка получения погоды ({resp.status})"}
 
-                # Парсим JSON-ответ
                 data = await resp.json()
         except Exception as e:
-            # Логируем любые ошибки подключения или чтения ответа
-            logger.warning("Ошибка подключения к %s\n%s", url, e)
+            logger.exception("Ошибка подключения к %s\n%s", url, e)
             return {"error": "Не удалось подключиться"}
 
     try:
         # Извлекаем текущие погодные условия
         current = data["current_condition"][0]
-
-        # Получаем описание погоды (на английском языке)
         description = current["weatherDesc"][0]["value"]
-
-        # Получаем температуру и приводим её к float
         temp = float(current["temp_C"])
 
-        logger.info("Обработка данных, полученных с %s, прошла успешно", url)
+        logger.debug("Обработка данных, полученных с %s, прошла успешно", url)
 
         # Возвращаем данные в унифицированном формате
         return {"weather": [{"description": description}], "main": {"temp": temp}}
@@ -109,7 +104,7 @@ async def get_weather_with_translation(city: str) -> dict:
     desc_en = data["weather"][0]["description"]
 
     # Логируем успешное получение погодных данных
-    logger.info("Получение информации по погоде в городе %s прошло успешно", city)
+    logger.debug("Получение информации по погоде в городе %s прошло успешно", city)
 
     # Формируем итоговый словарь для использования в боте
     return {
