@@ -10,17 +10,9 @@ from utils.weather_utils import translate_weather
 async def _get_weather(city: str) -> dict:
     """
     Получает текущую погоду для указанного города через сервис wttr.in.
-
     Функция выполняет HTTP-запрос к публичному сервису wttr.in,
     который не требует API-ключа и подходит для использования
     в облачных средах (например, Railway).
-
-    На выходе функция либо возвращает нормализованный словарь
-    с погодными данными (температура и описание),
-    либо словарь с ключом `error` в случае любой ошибки:
-    - сетевой ошибки;
-    - некорректного HTTP-статуса;
-    - ошибки обработки JSON-ответа.
 
     Args:
         city (str): Название города, для которого необходимо получить погоду.
@@ -28,7 +20,7 @@ async def _get_weather(city: str) -> dict:
     Returns:
         dict: Словарь с данными о погоде или словарь с описанием ошибки.
     """
-    # Формируем URL запроса к сервису wttr.in в формате JSON
+
     url = f"https://wttr.in/{quote(city)}?format=j1"
 
     timeout = aiohttp.ClientTimeout(
@@ -41,7 +33,7 @@ async def _get_weather(city: str) -> dict:
     headers = {"User-Agent": "Mozilla/5.0"}
 
     retries = 5
-    delay = 0.25  # стартовая задержка между попытками
+    delay = 0.25
 
     async with aiohttp.ClientSession(timeout=timeout, headers=headers) as session:
         for attempt in range(1, retries + 1):
@@ -49,7 +41,7 @@ async def _get_weather(city: str) -> dict:
 
             try:
                 async with session.get(url) as resp:
-                    if resp.status != 200:
+                    if resp.status != 200:  # type: ignore
                         logger.warning(
                             "Ошибка получения погоды с %s. Статус: %s",
                             url,
@@ -58,7 +50,7 @@ async def _get_weather(city: str) -> dict:
                         return {"error": f"Ошибка получения погоды ({resp.status})"}
 
                     data = await resp.json()
-                    break  # успех — выходим из retry
+                    break
 
             except (TimeoutError, aiohttp.ClientError) as e:
                 logger.warning(
@@ -69,15 +61,14 @@ async def _get_weather(city: str) -> dict:
                     e,
                 )
 
-                if attempt == retries:
-                    return {"error": "Не удалось подключиться к сервису погоды"}
-
-                await asyncio.sleep(delay)
-                delay *= 2  # exponential backoff (1 → 2 → 4)
-
             except Exception as e:
                 logger.exception("Неожиданная ошибка при запросе к %s\n%s", url, e)
-                return {"error": "Внутренняя ошибка"}
+
+            if attempt == retries:
+                return {"error": "Не удалось подключиться"}
+
+            await asyncio.sleep(delay)
+            delay *= 2
 
     try:
         current = data["current_condition"][0]
@@ -100,16 +91,6 @@ async def get_weather_with_translation(city: str) -> dict:
     """
     Получает текущую погоду для города и возвращает данные с переводом описания.
 
-    Функция является публичным интерфейсом сервиса погоды
-    и используется в обработчиках Telegram-бота.
-
-    Последовательность действий:
-    1. Проверяет валидность названия города.
-    2. Запрашивает данные о погоде через `_get_weather`.
-    3. Обрабатывает возможные ошибки.
-    4. Переводит описание погоды на русский язык.
-    5. Возвращает готовый к отображению результат.
-
     Args:
         city (str): Название города, введённое пользователем.
 
@@ -117,28 +98,20 @@ async def get_weather_with_translation(city: str) -> dict:
         dict: Словарь с переведённым описанием погоды и температурой
         либо словарь с ключом `error` в случае ошибки.
     """
-    # Логируем начало получения информации о погоде
+
     logger.info("Запуск получения информации по погоде в городе %s", city)
 
-    # Проверяем корректность названия города
     if not validate_city(city):
         logger.warning("Название города %s не валидировано", city)
         return {"error": "Некорректное название города"}
 
-    # Получаем сырые данные о погоде
     data = await _get_weather(city)
-
-    # Если при получении погоды произошла ошибка — возвращаем её сразу
     if "error" in data:
         return data
 
-    # Извлекаем английское описание погоды
     desc_en = data["weather"][0]["description"]
-
-    # Логируем успешное получение погодных данных
     logger.debug("Получение информации по погоде в городе %s прошло успешно", city)
 
-    # Формируем итоговый словарь для использования в боте
     return {
         "city": city,
         "description": translate_weather(desc_en),
