@@ -1,4 +1,5 @@
 import aiohttp
+from asyncio import TimeoutError
 from urllib.parse import quote
 
 from utils.weather_utils import validate_city
@@ -31,9 +32,9 @@ async def _get_weather(city: str) -> dict:
     url = f"https://wttr.in/{quote(city)}?format=j1"
 
     timeout = aiohttp.ClientTimeout(
-        total=20,
-        connect=10,
-        sock_connect=10,
+        total=60,
+        connect=20,
+        sock_connect=20,
         sock_read=20,
     )
     headers = {"User-Agent": "Mozilla/5.0"}
@@ -64,9 +65,18 @@ async def _get_weather(city: str) -> dict:
 
         # Возвращаем данные в унифицированном формате
         return {"weather": [{"description": description}], "main": {"temp": temp}}
+
+    except TimeoutError as e:
+        logger.exception("Неожиданная ошибка", e, sep='\n')
+        return {"error": "Сервис погоды не отвечает"}
+
+    except aiohttp.ClientError as e:
+        logger.exception("Неожиданная ошибка", e, sep='\n')
+        return {"error": f"Ошибка сети: {e}"}
+
     except Exception as e:
-        logger.warning("Ошибка обработки данных\n%s", e)
-        return {"error": f"Ошибка обработки данных: {e}"}
+        logger.exception("Неожиданная ошибка", e, sep='\n')
+        return {"error": "Внутренняя ошибка"}
 
 
 async def get_weather_with_translation(city: str) -> dict:
