@@ -13,3 +13,11 @@ else:
         encoding="utf-8",
         decode_responses=True,
     )
+
+
+def get_redis_client():
+    """
+    Возвращает клиент Redis
+    """
+
+    return redis_client
