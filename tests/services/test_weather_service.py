@@ -7,10 +7,6 @@ from services import weather_service
 class MockAiohttpResponse:
     """
     Мок объекта ответа aiohttp.
-
-    Этот класс используется для имитации реального ответа от API погоды.
-    Поддерживает асинхронный контекстный менеджер (async with) и метод json(),
-    который возвращает заранее определенные данные.
     """
 
     def __init__(self, status=200, json_data=None):
@@ -24,13 +20,11 @@ class MockAiohttpResponse:
         self.status = status
         self._json = (
             json_data or {}
-        )  # Если json_data не передан, возвращаем пустой словарь
+        )  # Если json_data не передан, присваиваем пустой словарь
 
     async def json(self):
         """
         Возвращает заранее заданные данные JSON.
-
-        Имитирует асинхронный метод response.json() из aiohttp.
         """
         return self._json
 
@@ -52,9 +46,6 @@ class MockAiohttpResponse:
 class MockAiohttpSession:
     """
     Мок объекта aiohttp.ClientSession.
-
-    При вызове session.get() возвращает заранее заданный мокированный response.
-    Также поддерживает async with.
     """
 
     def __init__(self, response):
@@ -80,8 +71,7 @@ class MockAiohttpSession:
 
     async def __aenter__(self):
         """
-        Поддержка async with.
-        Возвращает сам объект сессии.
+        Поддержка async with. Возвращает сам объект сессии.
         """
         return self
 
@@ -93,18 +83,16 @@ class MockAiohttpSession:
         return False
 
 
-# Тесты функции _get_weather
 @pytest.mark.asyncio
 async def test_get_weather_success():
     """
     Проверка успешного получения данных погоды через _get_weather.
-
     Функция должна корректно обрабатывать JSON с ключами
     'current_condition', 'weatherDesc' и 'temp_C', и возвращать
     словарь с ключами 'weather' и 'main'.
     """
-    # Задаем фейковые данные API
-    fake_data = {
+
+    fake_data = {  # Задаем фейковые данные API
         "current_condition": [{"weatherDesc": [{"value": "Sunny"}], "temp_C": "25"}]
     }
 
@@ -128,8 +116,7 @@ async def test_get_weather_success():
 async def test_get_weather_http_error():
     """
     Проверка обработки HTTP ошибки (например, 404) при запросе погоды.
-
-    Функция должна вернуть словарь с ключом 'error' и указанием кода ошибки.
+    Не тестируется обработка ошибок TimeoutError, aiohttp.ClientError.
     """
     # Создаем мок-ответ с кодом 404
     mock_response = MockAiohttpResponse(status=404, json_data={})
@@ -149,17 +136,35 @@ async def test_get_weather_http_error():
 
 
 @pytest.mark.asyncio
+async def test_get_weather_timeout_error():
+    """
+    Проверяет обработку TimeoutError при запросе к API.
+    """
+
+    class TimeoutSession(MockAiohttpSession):
+        def get(self, _):
+            raise TimeoutError("Connection timeout")
+
+    mock_response = MockAiohttpResponse(status=408, json_data={})
+    mock_session = TimeoutSession(response=mock_response)
+
+    with patch(
+        "services.weather_service.aiohttp.ClientSession",
+        return_value=mock_session,
+    ):
+        result = await weather_service._get_weather("Moscow")
+
+    assert result == {"error": "Не удалось подключиться"}
+
+
+@pytest.mark.asyncio
 async def test_get_weather_json_error():
     """
     Проверка обработки ошибки при парсинге JSON.
-
-    Если метод response.json() выбрасывает исключение, функция должна
-    вернуть словарь с ключом 'error'.
     """
 
     class BadResponse(MockAiohttpResponse):
         async def json(self):
-            # Имитируем ошибку при обработке JSON
             raise ValueError("JSON parse error")
 
     # Создаём мок с неправильным JSON
@@ -182,15 +187,10 @@ async def test_get_weather_json_error():
     )
 
 
-# Тесты функции get_weather_with_translation
 @pytest.mark.asyncio
 async def test_get_weather_with_translation_success():
     """
     Проверка успешного получения погоды с переводом описания на русский.
-
-    Функция должна валидировать город, получить данные через _get_weather,
-    перевести описание через translate_weather и вернуть словарь с ключами
-    'city', 'description' и 'temp'.
     """
     fake_data = {"weather": [{"description": "Cloudy"}], "main": {"temp": 10.0}}
 
@@ -205,7 +205,6 @@ async def test_get_weather_with_translation_success():
     ):
         result = await weather_service.get_weather_with_translation("Moscow")
 
-    # Проверяем корректность результата
     assert result == {"city": "Moscow", "description": "RU-Cloudy", "temp": 10.0}
 
 
@@ -213,31 +212,19 @@ async def test_get_weather_with_translation_success():
 async def test_get_weather_with_translation_invalid_city():
     """
     Проверка поведения функции get_weather_with_translation при некорректном названии города.
-
-    Функция должна сначала вызвать validate_city для проверки названия города.
-    Если город невалиден, функция возвращает словарь с ключом 'error'
-    и не вызывает внутренние функции _get_weather и translate_weather.
     """
+
     # Патчим validate_city, чтобы она вернула False (город невалидный)
-    # Это имитирует случай, когда пользователь ввёл неправильное название города
     with patch("services.weather_service.validate_city", return_value=False):
-        # Вызываем функцию с некорректным городом
         result = await weather_service.get_weather_with_translation("FakeCity")
 
-    # Проверяем, что функция вернула словарь с ключом 'error' и корректным сообщением
-    # Здесь мы проверяем именно логику "раннего выхода" при некорректном городе
     assert result == {"error": "Некорректное название города"}
 
 
 @pytest.mark.asyncio
 async def test_get_weather_with_translation_error_from_api():
     """
-    Проверка обработки ошибки, возвращаемой _get_weather.
-
-    Если _get_weather возвращает словарь с ключом 'error',
-    get_weather_with_translation должна вернуть этот же словарь.
-    Это позволяет правильно обрабатывать ошибки от внешнего API,
-    не вызывая translate_weather.
+    Проверка обработки ошибки, возвращаемой _get_weather..
     """
     # Патчим validate_city, чтобы город считался валидным
     # Патчим _get_weather, чтобы она вернула заранее определённую ошибку
@@ -262,11 +249,8 @@ async def test_get_weather_with_translation_error_from_api():
 async def test_get_weather_data_processing_error():
     """
     Проверка обработки некорректной структуры данных от API.
-
-    Например, отсутствует ключ 'current_condition'. Функция должна
-    вернуть словарь с ключом 'error'.
     """
-    # Создаем фейковые данные с неправильной структурой
+
     fake_data = {"wrong_key": "oops"}
 
     # Создаем мок-ответ и мок-сессию для этих данных
