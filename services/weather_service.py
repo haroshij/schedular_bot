@@ -1,5 +1,7 @@
 import aiohttp
 import asyncio
+import json
+from app.redis_client import redis_client
 from urllib.parse import quote
 
 from utils.weather_utils import validate_city
@@ -13,6 +15,7 @@ async def _get_weather(city: str) -> dict:
     Функция выполняет HTTP-запрос к публичному сервису wttr.in,
     который не требует API-ключа и подходит для использования
     в облачных средах (например, Railway).
+    Также данные в течение 10 минут будут храниться в Redis
 
     Args:
         city (str): Название города, для которого необходимо получить погоду.
@@ -21,8 +24,16 @@ async def _get_weather(city: str) -> dict:
         dict: Словарь с данными о погоде или словарь с описанием ошибки.
     """
 
-    url = f"https://wttr.in/{quote(city)}?format=j1"
 
+    cache_key = f"weather:{city.lower()}"
+    cache_ttl = 600
+
+    cached = await redis_client.get(cache_key)  # Проверяем Redis cache
+    if cached:
+        logger.debug("Погода для %s получена из Redis cache", city)
+        return json.loads(cached)
+
+    url = f"https://wttr.in/{quote(city)}?format=j1"
     timeout = aiohttp.ClientTimeout(
         total=60,
         connect=20,
@@ -76,11 +87,18 @@ async def _get_weather(city: str) -> dict:
         temp = float(current["temp_C"])
 
         logger.debug("Обработка данных с %s прошла успешно", url)
-
-        return {
+        result = {
             "weather": [{"description": description}],
             "main": {"temp": temp},
         }
+
+        await redis_client.setex(  # сохраняем в Redis
+            cache_key,
+            cache_ttl,
+            json.dumps(result),
+        )
+
+        return result
 
     except Exception as e:
         logger.exception("Ошибка обработки ответа wttr.in\n%s", e)
