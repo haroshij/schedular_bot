@@ -32,7 +32,7 @@ async def _get_weather(city: str) -> dict:
     if redis_client:
         cached = await redis_client.get(cache_key)  # Проверяем Redis cache
         if cached:
-            logger.debug("Погода для %s получена из Redis cache", city)
+            logger.info("Погода для %s получена из Redis cache", city)
             return json.loads(cached)
 
     url = f"https://wttr.in/{quote(city)}?format=j1"
