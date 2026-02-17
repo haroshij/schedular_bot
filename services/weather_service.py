@@ -1,7 +1,7 @@
 import aiohttp
 import asyncio
 import json
-from app.redis_client import redis_client
+from app.redis_client import get_redis_client
 from urllib.parse import quote
 
 from utils.weather_utils import validate_city
@@ -27,11 +27,13 @@ async def _get_weather(city: str) -> dict:
 
     cache_key = f"weather:{city.lower()}"
     cache_ttl = 600
+    redis_client = get_redis_client()
 
-    cached = await redis_client.get(cache_key)  # Проверяем Redis cache
-    if cached:
-        logger.debug("Погода для %s получена из Redis cache", city)
-        return json.loads(cached)
+    if redis_client:
+        cached = await redis_client.get(cache_key)  # Проверяем Redis cache
+        if cached:
+            logger.debug("Погода для %s получена из Redis cache", city)
+            return json.loads(cached)
 
     url = f"https://wttr.in/{quote(city)}?format=j1"
     timeout = aiohttp.ClientTimeout(
@@ -92,11 +94,12 @@ async def _get_weather(city: str) -> dict:
             "main": {"temp": temp},
         }
 
-        await redis_client.setex(  # сохраняем в Redis
-            cache_key,
-            cache_ttl,
-            json.dumps(result),
-        )
+        if redis_client:
+            await redis_client.setex(  # сохраняем в Redis
+                cache_key,
+                cache_ttl,
+                json.dumps(result),
+            )
 
         return result
 
