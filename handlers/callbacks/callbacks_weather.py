@@ -48,7 +48,9 @@ async def handle_weather_callbacks(update: Update, _: CallbackContext, data: str
                     f"{weather['description'].capitalize()}\n"
                     f"🌡 {round(weather['temp'])}°C"
                 )
-                logger.info("Отправлена погода пользователю %s | city=%s", user_id, city)
+                logger.info(
+                    "Отправлена погода пользователю %s | city=%s", user_id, city
+                )
 
             await query.edit_message_text(text, reply_markup=weather_actions_kb())
 

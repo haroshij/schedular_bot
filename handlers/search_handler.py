@@ -43,7 +43,9 @@ async def search_handler(update: Update, _: CallbackContext):
     results = await search_duckduckgo(query)
 
     # Формируем текст ответа из первых 5 результатов
-    text = """Для повторного поиска отправьте новый запрос\n\n""" + "\n\n".join(results[:5])
+    text = """Для повторного поиска отправьте новый запрос\n\n""" + "\n\n".join(
+        results[:5]
+    )
 
     # Отправляем результаты пользователю
     await update.message.reply_text(

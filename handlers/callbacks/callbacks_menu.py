@@ -8,7 +8,6 @@ from app.decorators import log_handler
 async def handle_menu_callbacks(update: Update, _: CallbackContext, data: str):
     """
     Обрабатывает callback-запросы, связанные с главным меню.
-    Если пользователь нажал кнопку "menu", показывает главное меню.
 
     Args:
         update (Update): Объект обновления от Telegram.

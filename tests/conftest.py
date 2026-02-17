@@ -1,10 +1,8 @@
 import sys
-from pathlib import Path
-
 import asyncio
-from types import SimpleNamespace
-
 import pytest
+from pathlib import Path
+from types import SimpleNamespace
 
 # Определяем корень проекта
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -15,18 +13,10 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 
-# Фикстуры для pytest
 @pytest.fixture(scope="session")
 def event_loop():
     """
     Глобальный asyncio event loop для асинхронных тестов.
-    Этот loop будет использоваться всеми тестами, которые требуют
-    асинхронного выполнения, например, функции с async/await.
-
-    Шаги:
-    1. Создаем новый event loop
-    2. Передаем его в тест через yield
-    3. После завершения тестовой сессии loop закрывается
     """
     loop = asyncio.new_event_loop()
     yield loop
@@ -53,9 +43,6 @@ def chat_id():
 def fake_message():
     """
     Создает имитацию объекта сообщения от Telegram.
-    Используется в тестах для проверки функций-обработчиков сообщений.
-    Методы reply_text и edit_text заменены на простые лямбды,
-    чтобы не выполнять реальные вызовы API.
     """
     return SimpleNamespace(
         text="test",
@@ -68,7 +55,6 @@ def fake_message():
 def fake_callback_query(fake_message):
     """
     Создает имитацию объекта CallbackQuery от Telegram.
-    Используется в тестах для проверки обработки callback событий.
     """
     return SimpleNamespace(
         data="test_callback",
@@ -81,8 +67,6 @@ def fake_callback_query(fake_message):
 def fake_update(user_id, chat_id, fake_message, fake_callback_query):
     """
     Создает имитацию объекта Update от Telegram.
-    Update содержит информацию о сообщении, callback, пользователе и чате.
-    Используется для тестирования обработчиков команд и callback.
     """
     return SimpleNamespace(
         effective_user=SimpleNamespace(id=user_id),
@@ -96,8 +80,6 @@ def fake_update(user_id, chat_id, fake_message, fake_callback_query):
 def fake_context():
     """
     Создает и возвращает имитацию контекста для обработчиков Telegram.
-    Контекст хранит пользовательские данные, данные бота и ссылку на приложение.
-    Используется для передачи в функции-обработчики без необходимости реального приложения.
     """
     return SimpleNamespace(
         user_data={},
@@ -110,6 +92,5 @@ def fake_context():
 def disable_logging(caplog):
     """
     Отключает вывод логов ниже уровня CRITICAL во время тестов.
-    Это позволяет сделать вывод pytest чистым и удобным для чтения.
     """
     caplog.set_level("CRITICAL")

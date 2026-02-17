@@ -73,7 +73,6 @@ def log_handler(func):
                 e,
             )
 
-            # Возвращаем END, чтобы корректно завершить разговор при ошибке
             return END
 
     return wrapper

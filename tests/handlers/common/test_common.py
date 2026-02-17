@@ -1,3 +1,7 @@
+"""
+Тестовый модуль для handlers.common.common.
+"""
+
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
@@ -7,45 +11,17 @@ from telegram.ext import ConversationHandler
 from handlers.common.common import cancel_menu_kb, start, cancel
 from keyboard import MAIN_MENU
 
-"""
-Тестовый модуль для handlers.common.common.
-
-Модуль содержит unit-тесты для общих хендлеров и вспомогательных функций:
-- генерации клавиатуры отмены (cancel_menu_kb);
-- стартового хендлера (/start);
-- хендлера отмены действия (cancel).
-
-Тесты проверяют:
-- корректность структуры inline-клавиатур;
-- корректные вызовы методов Telegram API;
-- правильную очистку пользовательских данных;
-- корректные возвращаемые значения ConversationHandler.
-"""
-
 
 def test_cancel_menu_kb():
     """
     Проверяет корректность клавиатуры отмены и возврата в меню.
-
-    Тест гарантирует, что:
-    - функция возвращает объект InlineKeyboardMarkup;
-    - клавиатура содержит ровно две строки;
-    - первая кнопка ведёт в главное меню;
-    - вторая кнопка отменяет текущее действие.
     """
-    # Получаем клавиатуру отмены
+
     kb = cancel_menu_kb()
-
-    # Проверяем тип возвращаемого объекта
     assert isinstance(kb, InlineKeyboardMarkup)
-
-    # Проверяем количество строк в клавиатуре
     assert len(kb.inline_keyboard) == 1
 
-    # Получаем кнопку из клавиатуры
     cancel_btn = kb.inline_keyboard[0][0]
-
-    # Проверяем текст и callback_data кнопки "Отмена"
     assert cancel_btn.text == "❌ Отмена"
     assert cancel_btn.callback_data == "cancel"
 
@@ -54,20 +30,11 @@ def test_cancel_menu_kb():
 async def test_start_handler():
     """
     Проверяет работу стартового хендлера (/start).
-
-    Тест подтверждает, что:
-    - пользователю отправляется приветственное сообщение;
-    - используется основная клавиатура MAIN_MENU;
-    - метод reply_text вызывается ровно один раз.
     """
-    # Создаём mock-объект update с асинхронным reply_text
-    update = MagicMock()
+
+    update = MagicMock()  # Создаём mock-объект update с асинхронным reply_text
     update.message.reply_text = AsyncMock()
-
-    # Контекст в данном тесте не используется, но требуется по сигнатуре
     context = MagicMock()
-
-    # Вызываем тестируемый хендлер
     await start(update, context)
 
     # Проверяем, что сообщение отправлено с правильным текстом и клавиатурой
@@ -80,29 +47,17 @@ async def test_start_handler():
 async def test_cancel_with_callback_query():
     """
     Проверяет работу хендлера cancel при callback-запросе.
-
-    Сценарий:
-    - пользователь нажимает кнопку отмены;
-    - бот отвечает на callback_query;
-    - редактирует сообщение;
-    - очищает временные данные пользователя;
-    - завершает ConversationHandler.
     """
-    # Создаём mock update с callback_query
-    update = MagicMock()
+
+    update = MagicMock()  # Создаём mock update с callback_query
     update.callback_query = MagicMock()
     update.callback_query.answer = AsyncMock()
     update.callback_query.edit_message_text = AsyncMock()
-
-    # Указываем id пользователя
     update.effective_user.id = 123
-
-    # Создаём контекст с временными пользовательскими данными
-    context = MagicMock()
+    context = MagicMock()  # Создаём контекст с временными данными
     context.user_data = {"temp": "data"}
 
-    # Вызываем хендлер отмены
-    result = await cancel(update, context)
+    result = await cancel(update, context)  # Вызываем хендлер отмены
 
     # Проверяем, что callback_query был подтверждён
     update.callback_query.answer.assert_awaited_once()
@@ -123,28 +78,18 @@ async def test_cancel_with_callback_query():
 async def test_cancel_with_message():
     """
     Проверяет работу хендлера cancel при обычном текстовом сообщении.
-
-    Сценарий:
-    - пользователь отправляет команду отмены текстом;
-    - бот отправляет новое сообщение;
-    - очищает временные данные пользователя;
-    - завершает ConversationHandler.
     """
     # Создаём mock update без callback_query, но с message
     update = MagicMock()
     update.callback_query = None
     update.message = MagicMock()
     update.message.reply_text = AsyncMock()
-
-    # Указываем id пользователя
     update.effective_user.id = 456
 
-    # Создаём контекст с временными пользовательскими данными
-    context = MagicMock()
+    context = MagicMock()  # Создаём контекст с временными данными
     context.user_data = {"temp": "data"}
 
-    # Вызываем хендлер отмены
-    result = await cancel(update, context)
+    result = await cancel(update, context)  # Вызываем хендлер отмены
 
     # Проверяем, что сообщение отправлено с нужным текстом и клавиатурой
     update.message.reply_text.assert_awaited_once_with(

@@ -6,16 +6,12 @@ from app.logger import logger
 async def search_duckduckgo(query: str) -> list[str]:
     """
     Выполняет асинхронный поиск в DuckDuckGo по заданному запросу.
-    Поиск оборачивается в `run_in_executor`, чтобы не блокировать
-    основной event loop asyncio.
 
     Args:
         query (str): Поисковый запрос, введённый пользователем.
 
     Returns:
         list[str]: Список строк с результатами поиска.
-        Каждый элемент содержит заголовок и ссылку,
-        либо сообщение об ошибке / отсутствии результатов.
     """
 
     ddgs = DDGS()  # Создаём экземпляр клиента DuckDuckGo Search
@@ -33,14 +29,11 @@ async def search_duckduckgo(query: str) -> list[str]:
         return ddgs.text(query, region="wt-wt", max_results=5)
 
     try:
-        # Выполняем синхронный поиск в пуле потоков,
-        # чтобы не блокировать asyncio event loop
-        results = await asyncio.wait_for(
+        results = await asyncio.wait_for(  # Выполняем синхронный поиск в пуле потоков
             loop.run_in_executor(None, search_ddgs),  # type: ignore
-            timeout=10,  # таймаут в секундах
+            timeout=10,
         )
     except Exception as e:
-        # Логируем ошибку поиска
         logger.warning(
             "Ошибка поиска через DDGS (Dux Distributed Global Search)\n%s", e
         )

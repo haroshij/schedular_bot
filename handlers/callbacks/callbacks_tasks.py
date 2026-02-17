@@ -19,7 +19,6 @@ from services.tasks_service import (
 async def handle_tasks_callbacks(update: Update, context: CallbackContext, data: str):
     """
     Обрабатывает callback-запросы, связанные с задачами пользователя.
-
     Поддерживаются действия:
     - Добавление новой задачи (add_task)
     - Перенос даты задачи (postpone)

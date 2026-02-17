@@ -1,19 +1,11 @@
+"""
+Тестовый модуль для services.tasks_service.
+"""
+
 import pytest
 from datetime import datetime
 from unittest.mock import AsyncMock, patch
 import sys
-
-"""
-Тестовый модуль для services.tasks_service.
-
-Содержит unit-тесты для сервисного слоя работы с задачами.
-Задача тестов — проверить, что:
-- сервис корректно вызывает функции слоя database;
-- возвращаемые значения проксируются без искажений;
-- все функции работают асинхронно и ожидают нужные вызовы.
-
-Реальная база данных не используется — все обращения к ней замоканы.
-"""
 
 # Мокаем модуль database ДО импорта tasks_service
 # Это критически важно:
@@ -33,17 +25,10 @@ from services.tasks_service import (  # noqa: E402
 )
 
 
-# create_task
 @pytest.mark.asyncio
 async def test_create_task():
     """
     Проверяет создание задачи.
-
-    Сценарий:
-    - генерируется task_id;
-    - вызывается add_task с нужными аргументами;
-    - затем задача извлекается через get_task_by_id;
-    - сервис возвращает полученный объект задачи.
     """
     fake_task = {
         "id": "task-id",
@@ -73,21 +58,15 @@ async def test_create_task():
         add_task_mock.assert_awaited_once()
         get_task_mock.assert_awaited_once()
 
-        # Проверяем возвращаемое значение
         assert result == fake_task
 
 
-# change_task_time
 @pytest.mark.asyncio
 async def test_change_task_time():
     """
     Проверяет изменение времени выполнения задачи.
-
-    Сценарий:
-    - вызывается update_task_time;
-    - затем обновлённая задача запрашивается через get_task_by_id;
-    - сервис возвращает обновлённую задачу.
     """
+
     new_time = datetime(2026, 3, 1, 10, 0)
     fake_task = {
         "id": "task-id",
@@ -113,15 +92,12 @@ async def test_change_task_time():
         assert result == fake_task
 
 
-# get_task
 @pytest.mark.asyncio
 async def test_get_task():
     """
     Проверяет получение одной задачи по id.
-
-    Сервис должен просто проксировать вызов get_task_by_id
-    и вернуть результат без изменений.
     """
+
     fake_task = {"id": "task-id"}
 
     with patch("services.tasks_service.get_task_by_id", new_callable=AsyncMock) as mock:
@@ -133,14 +109,12 @@ async def test_get_task():
         assert result == fake_task
 
 
-# get_tasks
 @pytest.mark.asyncio
 async def test_get_tasks():
     """
     Проверяет получение списка задач пользователя.
-
-    Сервис вызывает get_all_tasks и возвращает список задач.
     """
+
     fake_tasks = [
         {"id": "1"},
         {"id": "2"},
@@ -155,16 +129,12 @@ async def test_get_tasks():
         assert result == fake_tasks
 
 
-# get_nearest_user_task
 @pytest.mark.asyncio
 async def test_get_nearest_user_task():
     """
     Проверяет получение ближайшей задачи пользователя.
-
-    Сервис должен:
-    - вызвать get_nearest_task;
-    - вернуть полученную задачу (или None).
     """
+
     fake_task = {"id": "nearest"}
 
     with patch(
@@ -178,15 +148,12 @@ async def test_get_nearest_user_task():
         assert result == fake_task
 
 
-# complete_task
 @pytest.mark.asyncio
 async def test_complete_task():
     """
     Проверяет завершение задачи.
-
-    Сервис не возвращает значение,
-    а лишь вызывает mark_task_done с task_id.
     """
+
     with patch("services.tasks_service.mark_task_done", new_callable=AsyncMock) as mock:
         await complete_task("task-id")
 

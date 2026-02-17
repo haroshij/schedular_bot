@@ -2,11 +2,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from utils.tasks_utils import format_task_date
 from constants.keyboard_constants import MAX_TASK_LENGTH
 
-# Главное меню бота
-# MAIN_MENU — это InlineKeyboardMarkup, который отображает основное меню бота:
-# - Каждая кнопка имеет текст и callback_data, который используется в обработчике callback_query
-# - Кнопки расположены в отдельных рядах (списках)
-MAIN_MENU = InlineKeyboardMarkup(
+MAIN_MENU = InlineKeyboardMarkup(  # Главное меню бота
     [
         [InlineKeyboardButton("➕ Добавить задачу", callback_data="add_task")],
         [InlineKeyboardButton("⏳ Ближайшая задача", callback_data="nearest_task")],
@@ -17,22 +13,9 @@ MAIN_MENU = InlineKeyboardMarkup(
 )
 
 
-# Кнопки для действий с конкретной задачей
 def task_actions(task_id: str) -> InlineKeyboardMarkup:
     """
     Создает inline-клавиатуру с действиями для конкретной задачи.
-
-    Функция формирует кнопки:
-    - "Выполнена" — отмечает задачу как выполненную
-    - "Перенести" — позволяет изменить время задачи
-    - "В меню" — возвращает пользователя в главное меню
-
-    Каждый callback_data содержит task_id для идентификации задачи.
-
-    Шаги:
-    1. Создаем список списков кнопок (каждая кнопка — InlineKeyboardButton)
-    2. Формируем callback_data с указанием действия и идентификатора задачи
-    3. Оборачиваем список кнопок в InlineKeyboardMarkup и возвращаем
 
     Args:
         task_id (str): Уникальный идентификатор задачи
@@ -48,24 +31,9 @@ def task_actions(task_id: str) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(kb)
 
 
-# Формирование меню со списком всех задач
 def tasks_inline_menu(tasks: list) -> InlineKeyboardMarkup:
     """
     Создает inline-клавиатуру со списком всех задач пользователя.
-
-    Для каждой задачи создается кнопка:
-    - Текст кнопки содержит обрезанное название задачи (если больше 19 символов)
-      и дату/время выполнения (через format_task_date)
-    - callback_data содержит идентификатор задачи для обработки выбора
-
-    Шаги:
-    1. Создаем пустой список kb для кнопок
-    2. Для каждой задачи:
-       - Проверяем длину названия задачи
-       - Если название длинное, обрезаем и добавляем "..."
-       - Формируем текст кнопки с названием и временем
-       - Добавляем InlineKeyboardButton в список kb
-    3. Оборачиваем список кнопок в InlineKeyboardMarkup и возвращаем
 
     Args:
         tasks (list): Список словарей с задачами, где каждая задача
@@ -80,28 +48,14 @@ def tasks_inline_menu(tasks: list) -> InlineKeyboardMarkup:
             title = f"{t['title'][:MAX_TASK_LENGTH]}..."
         else:
             title = t["title"]
-        # Формируем текст кнопки с названием и временем задачи
-        text = f"  {title}   ⏰ {format_task_date(t['scheduled_time'])}  "
+        text = f"{title}   ⏰ {format_task_date(t['scheduled_time'])}"
         kb.append([InlineKeyboardButton(text, callback_data=f"task:{t['id']}")])
     return InlineKeyboardMarkup(kb)
 
 
-# Меню действий для раздела погоды
 def weather_actions_kb() -> InlineKeyboardMarkup:
     """
     Создает inline-клавиатуру для действий в разделе погоды.
-
-    Кнопки:
-    - "Другой город" — позволяет выбрать другой город для прогноза
-    - "В меню" — возвращает пользователя в главное меню
-
-    Шаги:
-    1. Создаем список списков кнопок (каждая кнопка — InlineKeyboardButton)
-    2. Указываем callback_data для обработки действия
-    3. Возвращаем InlineKeyboardMarkup с кнопками
-
-    Args:
-        -
 
     Returns:
         InlineKeyboardMarkup: Inline клавиатура для действий с погодой

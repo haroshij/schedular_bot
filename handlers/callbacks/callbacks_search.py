@@ -11,19 +11,13 @@ async def handle_search_callbacks(update: Update, _: CallbackContext, data: str)
     """
     Обрабатывает callback-запросы, связанные с поиском задач.
 
-    Если пользователь нажал кнопку "search":
-        - показывает сообщение с приглашением ввести запрос,
-        - показывает клавиатуру отмены,
-        - переводит пользователя в состояние SEARCH_QUERY.
-
     Args:
         update (Update): Объект обновления от Telegram.
         _ (CallbackContext): Контекст выполнения хендлера (не используется).
         data (str): Данные callback.
 
     Returns:
-        str | None: Возвращает SEARCH_QUERY, если пользователь начал поиск,
-                    иначе None.
+        str | None: SEARCH_QUERY, если пользователь начал поиск, иначе None.
     """
 
     query = update.callback_query

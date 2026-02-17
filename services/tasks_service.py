@@ -15,8 +15,7 @@ from app.logger import logger
 async def create_task(user_id: int, title: str, scheduled_time: datetime) -> dict:
     """
     Создаёт новую задачу пользователя и сохраняет её в базе данных.
-    Используется UUID, чтобы гарантировать уникальность задачи
-    независимо от пользователя и времени создания.
+    Используется UUID, чтобы гарантировать уникальность.
 
     Args:
         user_id (int): Идентификатор пользователя, которому принадлежит задача.
@@ -104,7 +103,6 @@ async def get_nearest_user_task(user_id: int) -> dict | None:
     """
 
     logger.debug("Запрос к БД для получения ближайшей задачи пользователя %s", user_id)
-
     return await get_nearest_task(user_id)
 
 
@@ -114,11 +112,7 @@ async def complete_task(task_id: str) -> None:
 
     Args:
         task_id (str): Уникальный идентификатор задачи.
-
-    Returns:
-        None
     """
 
     logger.debug('Запрос к БД для перевода задачи %s в состояние "done"', task_id)
-
     await mark_task_done(task_id)

@@ -13,23 +13,17 @@ from app.logger import logger
 async def callbacks(update: Update, context: CallbackContext):
     """
     Универсальный хендлер для всех callback-запросов Telegram.
-
     Функция последовательно передаёт callback-запросы в набор обработчиков:
-    - Меню
-    - Задачи
-    - Погода
-    - Поиск
 
     Args:
         update (Update): Объект обновления от Telegram.
         context (CallbackContext): Контекст выполнения хендлера.
 
     Returns:
-        Any: Возвращает результат из первого обработчика, который что-то вернул,
-             или None, если ни один обработчик не обработал callback.
+        Any: Возвращает результат из первого обработчика, или None,
+        если ни один обработчик не обработал callback.
     """
 
-    # Получаем объект callback-запроса
     query = update.callback_query
     if not query:  # Если callback отсутствует — ничего не делаем
         logger.warning("Нет запроса в update!")

@@ -1,34 +1,21 @@
-import asyncio
+"""
+Тестовый модуль для services.search_service.
+"""
 
+import asyncio
 import pytest
 from unittest.mock import MagicMock, patch, AsyncMock
 
 from services.search_service import search_duckduckgo, main
 
-"""
-Тестовый модуль для services.search_service.
-
-Модуль содержит unit-тесты для:
-- асинхронной функции поиска через DuckDuckGo (search_duckduckgo);
-- точки входа main, используемой при запуске модуля из CLI.
-
-Тесты покрывают:
-- успешный поиск;
-- пустой результат;
-- пропуск некорректных элементов выдачи;
-- обработку исключений;
-- корректный вывод результатов пользователю.
-"""
-
 
 @pytest.fixture
 def mock_loop():
     """
-    Фикстура, возвращающая mock-объект event loop.
-
-    Используется для подмены asyncio.get_running_loop и
-    контроля поведения run_in_executor без запуска реального event loop.
+    Фикстура, возвращающая mock event loop для подмены asyncio.get_running_loop
+    и контроля поведения run_in_executor без запуска реального event loop.
     """
+
     loop = MagicMock()
     return loop
 
@@ -36,15 +23,8 @@ def mock_loop():
 def make_future(result):
     """
     Создаёт asyncio.Future с заранее установленным результатом.
-
     Используется для имитации асинхронного выполнения функции
     внутри run_in_executor.
-
-    Args:
-        result: Значение, которое должно быть возвращено future.
-
-    Returns:
-        asyncio.Future: future с установленным результатом.
     """
     fut = asyncio.Future()
     fut.set_result(result)
@@ -55,14 +35,8 @@ def make_future(result):
 async def test_search_duckduckgo_success(mock_loop):
     """
     Проверяет успешный сценарий поиска.
-
-    Сценарий:
-    - DuckDuckGo возвращает список валидных результатов;
-    - каждый результат содержит title и href;
-    - функция форматирует данные в строки вида:
-      "<title>\\n<link>".
     """
-    # Подготавливаем фейковую выдачу поиска
+
     fake_results = [
         {"title": "Python", "href": "https://python.org"},
         {"title": "Asyncio", "href": "https://docs.python.org/asyncio"},
@@ -91,10 +65,6 @@ async def test_search_duckduckgo_success(mock_loop):
 async def test_search_duckduckgo_empty_result(mock_loop):
     """
     Проверяет поведение при пустой выдаче поиска.
-
-    Сценарий:
-    - DuckDuckGo возвращает пустой список;
-    - функция возвращает сообщение о том, что ничего не найдено.
     """
     # run_in_executor возвращает future с пустым списком
     mock_loop.run_in_executor.return_value = make_future([])
@@ -116,18 +86,13 @@ async def test_search_duckduckgo_empty_result(mock_loop):
 async def test_search_duckduckgo_skips_invalid_items(mock_loop):
     """
     Проверяет, что некорректные элементы выдачи игнорируются.
-
-    Некорректными считаются элементы:
-    - без title;
-    - без href;
-    - с title=None.
-
-    В результат должны попасть только полностью валидные элементы.
     """
     # Фейковая выдача с валидными и невалидными элементами
     fake_results = [
         {"title": "Valid", "href": "https://example.com"},
+        {"title": "Valid", "href": None},
         {"title": None, "href": "https://bad.com"},
+        {"title": None, "href": None},
         {"href": "https://bad.com"},
         {"title": "No link"},
     ]
@@ -144,7 +109,6 @@ async def test_search_duckduckgo_skips_invalid_items(mock_loop):
     ):
         result = await search_duckduckgo("test")
 
-    # В результат должен попасть только один валидный элемент
     assert result == ["Valid\nhttps://example.com"]
 
 
@@ -152,11 +116,6 @@ async def test_search_duckduckgo_skips_invalid_items(mock_loop):
 async def test_search_duckduckgo_exception(mock_loop):
     """
     Проверяет обработку исключения во время поиска.
-
-    Сценарий:
-    - run_in_executor выбрасывает исключение;
-    - функция перехватывает его;
-    - возвращает сообщение об ошибке пользователю.
     """
     # Создаём future с исключением
     fut = asyncio.Future()
@@ -180,11 +139,6 @@ async def test_search_duckduckgo_exception(mock_loop):
 async def test_main_execution():
     """
     Проверяет работу функции main при запуске модуля.
-
-    Сценарий:
-    - пользователь вводит поисковый запрос;
-    - search_duckduckgo возвращает список результатов;
-    - каждый результат выводится через print.
     """
     fake_results = ["Result 1", "Result 2"]
 
