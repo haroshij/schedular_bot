@@ -1,8 +1,15 @@
 import redis.asyncio as redis
 import os
+from app.logger import logger
 
-redis_client = redis.from_url(
-    os.getenv("REDIS_URL", "redis://localhost:6379"),
-    encoding="utf-8",
-    decode_responses=True,
-)
+REDIS_URL = os.getenv("REDIS_URL")
+
+if not REDIS_URL:
+    logger.warning("REDIS_URL не задан — cache отключён")
+    redis_client = None
+else:
+    redis_client = redis.from_url(
+        REDIS_URL,
+        encoding="utf-8",
+        decode_responses=True,
+    )
