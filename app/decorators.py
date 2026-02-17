@@ -66,7 +66,7 @@ def log_handler(func):
             )
             return result
         except Exception as e:
-            logger.error(
+            logger.exception(
                 "Ошибка в хендлере %s для пользователя %s\n%s",
                 func.__name__,
                 user_id,
