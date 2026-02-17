@@ -3,6 +3,7 @@ import os
 from app.logger import logger
 
 REDIS_URL = os.getenv("REDIS_URL")
+logger.info("REDIS_URL=%s", REDIS_URL)
 
 if not REDIS_URL:
     logger.warning("REDIS_URL не задан — cache отключён")
