@@ -80,6 +80,7 @@ def create_app():
         .token(token)
         .post_init(on_startup)
         .post_shutdown(on_shutdown)
+        .concurrent_updates(True)
         .build()
     )
 
