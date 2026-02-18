@@ -24,7 +24,6 @@ async def _get_weather(city: str) -> dict:
         dict: Словарь с данными о погоде или словарь с описанием ошибки.
     """
 
-
     cache_key = f"weather:{city.lower()}"
     cache_ttl = 600
     redis_client = get_redis_client()
