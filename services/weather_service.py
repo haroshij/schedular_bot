@@ -65,7 +65,7 @@ async def _get_weather(city: str) -> dict:
                     break
 
             except (TimeoutError, aiohttp.ClientError) as e:
-                logger.warning(
+                logger.exception(
                     "Ошибка подключения к %s (попытка %s/%s): \n%s",
                     url,
                     attempt,
