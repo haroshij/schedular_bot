@@ -1,5 +1,6 @@
+import json
 import pytest
-from unittest.mock import patch
+from unittest.mock import patch, AsyncMock
 from services import weather_service
 
 
@@ -266,3 +267,71 @@ async def test_get_weather_data_processing_error():
     # Проверяем, что функция вернула словарь с ключом 'error'
     assert "error" in result
     assert "Ошибка обработки данных" in result["error"]
+
+
+@pytest.mark.asyncio
+async def test_get_weather_from_redis_cache():
+    """
+    Проверяет получение данных из Redis cache (без HTTP-запроса).
+    """
+
+    cached_result = {
+        "weather": [{"description": "Sunny"}],
+        "main": {"temp": 15.0},
+    }
+
+    mock_redis = AsyncMock()
+    mock_redis.get.return_value = json.dumps(cached_result)
+
+    with (
+        patch("services.weather_service.get_redis_client", return_value=mock_redis),
+        patch("services.weather_service.aiohttp.ClientSession") as mock_session,
+    ):
+        result = await weather_service._get_weather("Moscow")
+
+    # Данные взяты из Redis
+    assert result == cached_result
+
+    # HTTP вообще не вызывался
+    mock_session.assert_not_called()
+
+    # В Redis ничего не записывали
+    mock_redis.setex.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_get_weather_saves_to_redis_when_cache_miss():
+    """
+    Проверяет сохранение данных в Redis при отсутствии cache.
+    """
+
+    fake_data = {
+        "current_condition": [{"weatherDesc": [{"value": "Sunny"}], "temp_C": "20"}]
+    }
+
+    mock_response = MockAiohttpResponse(status=200, json_data=fake_data)
+    mock_session = MockAiohttpSession(response=mock_response)
+
+    mock_redis = AsyncMock()
+    mock_redis.get.return_value = None
+
+    with (
+        patch("services.weather_service.get_redis_client", return_value=mock_redis),
+        patch(
+            "services.weather_service.aiohttp.ClientSession", return_value=mock_session
+        ),
+    ):
+        result = await weather_service._get_weather("Moscow")
+
+    expected = {"weather": [{"description": "Sunny"}], "main": {"temp": 20.0}}
+
+    assert result == expected
+
+    # Проверяем запись в Redis
+    mock_redis.setex.assert_awaited_once()
+
+    args = mock_redis.setex.await_args[0]
+
+    assert args[0] == "weather:moscow"  # cache_key
+    assert args[1] == 600  # TTL
+    assert json.loads(args[2]) == expected
