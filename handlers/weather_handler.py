@@ -27,7 +27,7 @@ async def weather_handler(update: Update, _: CallbackContext):
         str: ConversationHandler.END — завершение текущего разговора.
     """
 
-    city = update.message.text.strip()
+    city = update.message.text.strip().capitalize()
     user_id = update.effective_user.id
 
     data = await get_weather_with_translation(city)
