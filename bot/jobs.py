@@ -72,5 +72,5 @@ async def restore_jobs(_):
         delay = (task["scheduled_time"] - now).total_seconds()
         send_task_reminder_task.apply_async(
             args=[task["id"], task["user_id"], str(task["scheduled_time"])],
-            countdown=max(0, delay)
+            countdown=max(0, delay),
         )

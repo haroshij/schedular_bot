@@ -30,8 +30,12 @@ def send_task_reminder_task(task_id: str, chat_id: int, scheduled_time: str):
                 return
             text = f"⏰ Напоминание!\n\n{format_task(task_db)}"
             logger.info("Отправляется напоминание задачи %s", task_id)
-            await bot.send_message(chat_id=chat_id, text=text, reply_markup=task_actions(task_id))
+            await bot.send_message(
+                chat_id=chat_id, text=text, reply_markup=task_actions(task_id)
+            )
         except Exception as e:
-            logger.exception("Ошибка при отправке напоминания для задачи %s\n%s", task_id, e)
+            logger.exception(
+                "Ошибка при отправке напоминания для задачи %s\n%s", task_id, e
+            )
 
     asyncio.run(_send())
