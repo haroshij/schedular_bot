@@ -19,5 +19,6 @@ app = Celery(
     broker=REDIS_URL + "/1",
     backend=None,  # Результаты задач сохранять, поэтому здесь None
 )
+
 # Говорим worker'у, где искать задачи
-app.autodiscover_tasks(["bot"])
+app.autodiscover_tasks(["bot.tasks"])

@@ -1,45 +1,101 @@
-import os
-import asyncio
-from telegram import Bot
-from bot.celery_app import app
+from datetime import datetime, timezone
+from telegram import Update
+from telegram.ext import CallbackContext
+
+from keyboard import MAIN_MENU
+from states import ADD_DATE, ADD_TEXT, POSTPONE_DATE, END
+from handlers.common.common import cancel_menu_kb
+from services.tasks_service import create_task, change_task_time
+from utils.tasks_utils import parse_and_validate_datetime
+from app.decorators import log_handler
 from app.logger import logger
-from database import get_task_by_id
-from utils.tasks_utils import format_task
-from keyboard import task_actions
 
 
-@app.task  # Celery регистрирует функцию как удалённую задачу
-def send_task_reminder_task(task_id: str, chat_id: int, scheduled_time: str):
-    """
-    Celery-задача для отправки напоминания.
-    """
+@log_handler
+async def add_task_date(update: Update, context: CallbackContext):
+    dt_utc = parse_and_validate_datetime(update.message.text)
+    if not dt_utc:
+        await update.message.reply_text(
+            "❌ Неверный формат или устаревшая дата. Попробуйте снова:\n\n"
+            "Примеры:\n"
+            "• 2026-02-10 18:30\n"
+            "• сегодня 21:00\n"
+            "• завтра 9:00",
+            reply_markup=cancel_menu_kb(),
+        )
+        logger.info(
+            "Пользователь %s ввёл неверный формат или устаревшую дату: %s",
+            update.effective_user.id,
+            update.message.text,
+        )
+        return ADD_DATE
 
-    async def _send():
-        bot = Bot(token=os.getenv("TELEGRAM_TOKEN"))  # Worker будет сам отправлять сообщения Telegram
-        try:
-            task_db = await get_task_by_id(task_id)
-            if (
-                not task_db
-                or task_db.get("status") != "pending"
-                or str(task_db["scheduled_time"])
-                != scheduled_time  # Защита от race condition
-            ):
-                logger.info("Задача %s уже выполнена или удалена", task_id)
-                return
-            text = f"⏰ Напоминание!\n\n{format_task(task_db)}"
-            logger.info("Отправляется напоминание задачи %s", task_id)
-            await bot.send_message(
-                chat_id=chat_id, text=text, reply_markup=task_actions(task_id)
-            )
-        except Exception as e:
-            logger.exception(
-                "Ошибка при отправке напоминания для задачи %s\n%s", task_id, e
-            )
+    context.user_data["task_time"] = dt_utc
+    await update.message.reply_text(
+        "Теперь введи текст задачи:", reply_markup=cancel_menu_kb()
+    )
+    return ADD_TEXT
 
-    # Использование существующего event loop или создание нового
-    try:
-        loop = asyncio.get_running_loop()
-    except RuntimeError:  # loop не найден
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-    loop.run_until_complete(_send())
+
+@log_handler
+async def add_task_text(update: Update, context: CallbackContext):
+    user_id = update.effective_user.id
+    title = update.message.text
+    scheduled_time = context.user_data["task_time"]
+
+    now = datetime.now(timezone.utc)
+    if scheduled_time < now:
+        await update.message.reply_text(
+            "❌ Введённая дата уже прошла. Задача не добавлена.",
+            reply_markup=MAIN_MENU,
+        )
+        logger.info("Пользователь %s ввёл устаревшую дату: %s", user_id, scheduled_time)
+        context.user_data.clear()
+        return END
+
+    task = await create_task(user_id, title, scheduled_time)
+    delay = (task["scheduled_time"] - datetime.now(timezone.utc)).total_seconds()
+
+    # Отправка Celery-задачи через строковую ссылку
+    from bot.tasks import send_task_reminder_task
+    send_task_reminder_task.apply_async(
+        args=[task["id"], user_id, str(task["scheduled_time"])],
+        countdown=max(0, delay),
+    )
+
+    await update.message.reply_text("✅ Задача добавлена", reply_markup=MAIN_MENU)
+    context.user_data.clear()
+    return END
+
+
+@log_handler
+async def postpone_date(update: Update, context: CallbackContext):
+    dt_utc = parse_and_validate_datetime(update.message.text)
+    if not dt_utc:
+        await update.message.reply_text(
+            "❌ Неверный формат или устаревшая дата. Попробуйте снова:\n\n"
+            "Примеры:\n"
+            "• 2026-02-10 18:30\n"
+            "• сегодня 21:00\n"
+            "• завтра 9:00",
+            reply_markup=cancel_menu_kb(),
+        )
+        logger.warning(
+            "Пользователь %s ввёл неверный формат или устаревшую дату: %s",
+            update.effective_user.id,
+            update.message.text,
+        )
+        return POSTPONE_DATE
+
+    task_id = context.user_data["task_id"]
+    task = await change_task_time(task_id, dt_utc)
+    delay = (task["scheduled_time"] - datetime.now(timezone.utc)).total_seconds()
+
+    from bot.tasks import send_task_reminder_task
+    send_task_reminder_task.apply_async(
+        args=[task_id, task["user_id"], str(task["scheduled_time"])],
+        countdown=max(0, delay),
+    )
+
+    await update.message.reply_text("⏳ Время изменено", reply_markup=MAIN_MENU)
+    return END

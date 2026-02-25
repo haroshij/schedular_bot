@@ -21,15 +21,17 @@ def send_task_reminder_task(task_id: str, chat_id: int, scheduled_time: str):
             if (
                 not task_db
                 or task_db.get("status") != "pending"
-                or str(task_db["scheduled_time"])
-                != scheduled_time  # Защита от race condition
+                or str(task_db["scheduled_time"]) != scheduled_time  # Защита от race condition
             ):
                 logger.info("Задача %s уже выполнена или удалена", task_id)
                 return
+
             text = f"⏰ Напоминание!\n\n{format_task(task_db)}"
             logger.info("Отправляется напоминание задачи %s", task_id)
             await bot.send_message(
-                chat_id=chat_id, text=text, reply_markup=task_actions(task_id)
+                chat_id=chat_id,
+                text=text,
+                reply_markup=task_actions(task_id),
             )
         except Exception as e:
             logger.exception(
