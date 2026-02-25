@@ -7,8 +7,8 @@ from database import get_task_by_id
 from utils.tasks_utils import format_task
 from keyboard import task_actions
 
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
-bot = Bot(token=TELEGRAM_TOKEN)  # Worker будет сам отправлять сообщения Telegram
+# TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
+# bot = Bot(token=TELEGRAM_TOKEN)  # Worker будет сам отправлять сообщения Telegram
 
 
 @app.task  # Celery регистрирует функцию как удалённую задачу
@@ -18,6 +18,7 @@ def send_task_reminder_task(task_id: str, chat_id: int, scheduled_time: str):
     """
 
     async def _send():
+        bot = Bot(token=os.getenv("TELEGRAM_TOKEN"))  # Worker будет сам отправлять сообщения Telegram
         try:
             task_db = await get_task_by_id(task_id)
             if (
