@@ -38,4 +38,10 @@ def send_task_reminder_task(task_id: str, chat_id: int, scheduled_time: str):
                 "Ошибка при отправке напоминания для задачи %s\n%s", task_id, e
             )
 
-    asyncio.run(_send())
+    # Использование существующего event loop или создание нового
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:  # loop не найден
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+    loop.run_until_complete(_send())
