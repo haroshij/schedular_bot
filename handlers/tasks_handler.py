@@ -5,7 +5,7 @@ from telegram.ext import CallbackContext
 
 from keyboard import MAIN_MENU
 from states import ADD_DATE, ADD_TEXT, POSTPONE_DATE, END
-from bot.jobs import send_task_reminder
+from bot.tasks import send_task_reminder_task
 from handlers.common.common import cancel_menu_kb
 from services.tasks_service import create_task, change_task_time
 from utils.tasks_utils import parse_and_validate_datetime
@@ -13,7 +13,6 @@ from app.decorators import log_handler
 from app.logger import logger
 
 
-# Ввод даты новой задачи
 @log_handler
 async def add_task_date(update: Update, context: CallbackContext):
     """
@@ -92,16 +91,20 @@ async def add_task_text(update: Update, context: CallbackContext):
         context.user_data.clear()
         return END
 
+    # создаём задачу в БД
     task = await create_task(user_id, title, scheduled_time)
 
     delay = (task["scheduled_time"] - datetime.now(timezone.utc)).total_seconds()
 
-    # Добавляем напоминание в job_queue
-    context.application.job_queue.run_once(
-        send_task_reminder,
-        max(0, delay),
-        data={"task": task, "chat_id": user_id},
-        name=f"task_{task['id']}",
+    # создаём Celery-задачу
+    send_task_reminder_task.apply_async(
+        args=[
+            task["id"],
+            user_id,
+            str(task["scheduled_time"]),
+        ],
+        countdown=max(0, delay),
+        task_id=f"task_{task['id']}",  # защита от дублей
     )
 
     await update.message.reply_text("✅ Задача добавлена", reply_markup=MAIN_MENU)
@@ -138,23 +141,24 @@ async def postpone_date(update: Update, context: CallbackContext):
             update.effective_user.id,
             update.message.text,
         )
-        return POSTPONE_DATE  # Остаёмся в состоянии переноса
+        return POSTPONE_DATE
 
     task_id = context.user_data["task_id"]
 
+    # обновляем время в БД
     task = await change_task_time(task_id, dt_utc)
 
-    for job in context.application.job_queue.jobs():
-        if job.name == f"task_{task_id}":
-            job.schedule_removal()
-            break
-
     delay = (task["scheduled_time"] - datetime.now(timezone.utc)).total_seconds()
-    context.application.job_queue.run_once(
-        send_task_reminder,
-        max(0, delay),
-        data={"task": task, "chat_id": task["user_id"]},
-        name=f"task_{task_id}",
+
+    # создаём новую Celery-задачу
+    send_task_reminder_task.apply_async(
+        args=[
+            task_id,
+            task["user_id"],
+            str(task["scheduled_time"]),
+        ],
+        countdown=max(0, delay),
+        task_id=f"task_{task_id}",  # тот же id — не будет дублей
     )
 
     await update.message.reply_text("⏳ Время изменено", reply_markup=MAIN_MENU)
