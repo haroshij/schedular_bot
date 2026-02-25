@@ -103,8 +103,7 @@ async def add_task_text(update: Update, context: CallbackContext):
             user_id,
             str(task["scheduled_time"]),
         ],
-        countdown=max(0, delay),
-        task_id=f"task_{task['id']}",  # защита от дублей
+        countdown=max(0, delay)
     )
 
     await update.message.reply_text("✅ Задача добавлена", reply_markup=MAIN_MENU)
