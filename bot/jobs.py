@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 
 from app.logger import logger
 from bot.tasks import send_task_reminder_task
-from database import get_all_pending_tasks  #, get_task_by_id
+from database import get_all_pending_tasks  # , get_task_by_id
 # from keyboard import task_actions
 # from utils.tasks_utils import format_task
 
@@ -58,7 +58,7 @@ from database import get_all_pending_tasks  #, get_task_by_id
 
 async def restore_jobs(_):
     """
-    Восстанавливает все pending задачи с помощью Celery.
+    Восстанавливает все pending задачи.
     """
 
     logger.debug("Формирование напоминаний для всех невыполненных задач...")
