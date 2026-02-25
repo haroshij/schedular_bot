@@ -46,7 +46,7 @@ def send_task_reminder_task(task_id: str, chat_id: int, scheduled_time: str):
     Celery-задача (sync wrapper → async код).
     """
 
-    logger.info("Task запушена")
+    logger.info("Task запущена")
 
     try:
         asyncio.run(_send_task_reminder(task_id, chat_id, scheduled_time))
