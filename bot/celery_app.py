@@ -1,6 +1,5 @@
 import os
 from celery import Celery
-import bot.tasks
 
 REDIS_URL = os.getenv("REDIS_URL")
 
