@@ -14,6 +14,8 @@ def send_task_reminder_task(task_id: str, chat_id: int, scheduled_time: str):
     """
     Celery-задача для отправки напоминания.
     """
+
+    logger.info('Task запушена')
     bot = Bot(token=os.getenv("TELEGRAM_TOKEN"))  # Синхронный бот для worker
 
     try:
