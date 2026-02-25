@@ -7,9 +7,6 @@ from database import get_task_by_id
 from utils.tasks_utils import format_task
 from keyboard import task_actions
 
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
-bot = Bot(token=TELEGRAM_TOKEN)  # Worker будет сам отправлять сообщения Telegram
-
 
 @app.task  # Celery регистрирует функцию как удалённую задачу
 def send_task_reminder_task(task_id: str, chat_id: int, scheduled_time: str):
@@ -18,12 +15,14 @@ def send_task_reminder_task(task_id: str, chat_id: int, scheduled_time: str):
     """
 
     async def _send():
+        bot = Bot(token=os.getenv("TELEGRAM_TOKEN"))  # Worker будет сам отправлять сообщения Telegram
         try:
             task_db = await get_task_by_id(task_id)
             if (
                 not task_db
                 or task_db.get("status") != "pending"
-                or str(task_db["scheduled_time"]) != scheduled_time  # Защита от race condition
+                or str(task_db["scheduled_time"])
+                != scheduled_time  # Защита от race condition
             ):
                 logger.info("Задача %s уже выполнена или удалена", task_id)
                 return
@@ -37,4 +36,10 @@ def send_task_reminder_task(task_id: str, chat_id: int, scheduled_time: str):
                 "Ошибка при отправке напоминания для задачи %s\n%s", task_id, e
             )
 
-    asyncio.run(_send())
+    # Использование существующего event loop или создание нового
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:  # loop не найден
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+    loop.run_until_complete(_send())
