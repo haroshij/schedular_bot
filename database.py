@@ -26,7 +26,10 @@ async def init_db() -> None:
     global _pool
     if _pool is None:
         # Явно указываем, что результат await это Pool
-        pool = cast(asyncpg.pool.Pool, await asyncpg.create_pool(DATABASE_URL, min_size=2, max_size=5))  # type: ignore
+        pool = cast(
+            asyncpg.pool.Pool,
+            await asyncpg.create_pool(DATABASE_URL, min_size=2, max_size=5),  # type: ignore
+        )
         _pool = pool
 
     pool = _pool
@@ -63,7 +66,10 @@ async def get_pool() -> asyncpg.pool.Pool:
     global _pool
     if _pool is None:
         logger.debug("Пул не создан, создаём автоматически...")
-        pool = cast(asyncpg.pool.Pool, await asyncpg.create_pool(DATABASE_URL, min_size=2, max_size=5))  # type: ignore
+        pool = cast(
+            asyncpg.pool.Pool,
+            await asyncpg.create_pool(DATABASE_URL, min_size=2, max_size=5),  # type: ignore
+        )
         _pool = pool
     return _pool
 
@@ -83,6 +89,7 @@ async def close_db() -> None:
 # Функции работы с задачами
 # ---------------------------
 
+
 async def add_task(task_id: str, user_id: int, title: str, scheduled_time: datetime):
     """
     Добавляет новую задачу в базу данных.
@@ -100,7 +107,10 @@ async def add_task(task_id: str, user_id: int, title: str, scheduled_time: datet
             INSERT INTO tasks (id, user_id, title, scheduled_time, status)
             VALUES ($1, $2, $3, $4, 'pending')
             """,
-            task_id, user_id, title, scheduled_time
+            task_id,
+            user_id,
+            title,
+            scheduled_time,
         )
 
 
@@ -139,7 +149,7 @@ async def get_nearest_task(user_id: int) -> Optional[Dict]:
             ORDER BY scheduled_time
             LIMIT 1
             """,
-            user_id
+            user_id,
         )
         return dict(row) if row else None
 
@@ -162,7 +172,7 @@ async def get_all_tasks(user_id: int) -> List[Dict]:
             WHERE user_id = $1 AND status = 'pending'
             ORDER BY scheduled_time
             """,
-            user_id
+            user_id,
         )
         return [dict(r) for r in rows]
 
@@ -183,7 +193,8 @@ async def update_task_time(task_id: str, new_time: datetime):
             SET scheduled_time = $1, status = 'pending'
             WHERE id = $2
             """,
-            new_time, task_id
+            new_time,
+            task_id,
         )
 
 
@@ -202,13 +213,14 @@ async def mark_task_done(task_id: str):
             SET status = 'done'
             WHERE id = $1
             """,
-            task_id
+            task_id,
         )
 
 
 # ---------------------------
 # Функции работы с пользователями
 # ---------------------------
+
 
 async def get_user_city(user_id: int) -> Optional[str]:
     """
@@ -243,13 +255,15 @@ async def set_user_city(user_id: int, city: str):
             ON CONFLICT (user_id)
             DO UPDATE SET city = EXCLUDED.city
             """,
-            user_id, city
+            user_id,
+            city,
         )
 
 
 # ---------------------------
 # Дополнительные функции
 # ---------------------------
+
 
 async def get_future_tasks() -> List[Dict]:
     """

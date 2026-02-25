@@ -49,9 +49,7 @@ def send_task_reminder_task(task_id: str, chat_id: int, scheduled_time: str):
     logger.info("Task запушена")
 
     try:
-        asyncio.run(
-            _send_task_reminder(task_id, chat_id, scheduled_time)
-        )
+        asyncio.run(_send_task_reminder(task_id, chat_id, scheduled_time))
 
     except Exception as e:
         logger.exception(

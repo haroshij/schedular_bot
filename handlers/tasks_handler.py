@@ -62,8 +62,7 @@ async def add_task_text(update: Update, context: CallbackContext):
     # Создаём Celery-задачу
     logger.info("Создаём Celery-задачу для task_id=%s", task["id"])
     send_task_reminder_task.apply_async(
-        args=[task["id"], user_id, str(task["scheduled_time"])],
-        countdown=max(0, delay)
+        args=[task["id"], user_id, str(task["scheduled_time"])], countdown=max(0, delay)
     )
 
     await update.message.reply_text("✅ Задача добавлена", reply_markup=MAIN_MENU)
@@ -91,7 +90,7 @@ async def postpone_date(update: Update, context: CallbackContext):
 
     send_task_reminder_task.apply_async(
         args=[task_id, task["user_id"], str(task["scheduled_time"])],
-        countdown=max(0, delay)
+        countdown=max(0, delay),
     )
 
     await update.message.reply_text("⏳ Время изменено", reply_markup=MAIN_MENU)
