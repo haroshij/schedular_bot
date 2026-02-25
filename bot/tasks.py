@@ -16,6 +16,7 @@ def send_task_reminder_task(task_id: str, chat_id: int, scheduled_time: str):
 
     async def _send():
         bot = Bot(token=os.getenv("TELEGRAM_TOKEN"))  # Worker будет сам отправлять сообщения Telegram
+        logger.info("TELEGRAM_TOKEN: %s", os.getenv("TELEGRAM_TOKEN")[:4] + "****")
         try:
             task_db = await get_task_by_id(task_id)
             if (
