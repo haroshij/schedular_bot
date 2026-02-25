@@ -49,7 +49,14 @@ def send_task_reminder_task(task_id: str, chat_id: int, scheduled_time: str):
     logger.info("Task запущена")
 
     try:
-        asyncio.run(_send_task_reminder(task_id, chat_id, scheduled_time))
+        # используем текущий loop Celery или создаём новый, если нет
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
+        loop.run_until_complete(_send_task_reminder(task_id, chat_id, scheduled_time))
 
     except Exception as e:
         logger.exception(

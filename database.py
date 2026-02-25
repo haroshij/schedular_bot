@@ -2,7 +2,7 @@ import os
 import asyncpg
 from urllib.parse import urlparse
 from datetime import datetime
-from typing import Optional, List, Dict, cast
+from typing import Optional, List, Dict
 
 from app.logger import logger
 
@@ -25,12 +25,8 @@ async def init_db() -> None:
     """
     global _pool
     if _pool is None:
-        # Явно указываем, что результат await это Pool
-        pool = cast(
-            asyncpg.pool.Pool,
-            await asyncpg.create_pool(DATABASE_URL, min_size=2, max_size=5),  # type: ignore
-        )
-        _pool = pool
+        # Создаём пул внутри текущего loop
+        _pool = await asyncpg.create_pool(DATABASE_URL, min_size=2, max_size=5)  # type: ignore
 
     pool = _pool
     # Получаем соединение из пула для создания таблиц
@@ -66,11 +62,7 @@ async def get_pool() -> asyncpg.pool.Pool:
     global _pool
     if _pool is None:
         logger.debug("Пул не создан, создаём автоматически...")
-        pool = cast(
-            asyncpg.pool.Pool,
-            await asyncpg.create_pool(DATABASE_URL, min_size=2, max_size=5),  # type: ignore
-        )
-        _pool = pool
+        _pool = await asyncpg.create_pool(DATABASE_URL, min_size=2, max_size=5)  # type: ignore
     return _pool
 
 
