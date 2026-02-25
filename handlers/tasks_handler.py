@@ -156,8 +156,7 @@ async def postpone_date(update: Update, context: CallbackContext):
             task["user_id"],
             str(task["scheduled_time"]),
         ],
-        countdown=max(0, delay),
-        task_id=f"task_{task_id}",  # тот же id — не будет дублей
+        countdown=max(0, delay)
     )
 
     await update.message.reply_text("⏳ Время изменено", reply_markup=MAIN_MENU)
