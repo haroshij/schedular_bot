@@ -58,6 +58,7 @@ async def add_task_text(update: Update, context: CallbackContext):
 
     # Отправка Celery-задачи через строковую ссылку
     from bot.tasks import send_task_reminder_task
+    logger.info("Создаём Celery-задачу для task_id=%s", task["id"])
     send_task_reminder_task.apply_async(
         args=[task["id"], user_id, str(task["scheduled_time"])],
         countdown=max(0, delay),
