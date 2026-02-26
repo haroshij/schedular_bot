@@ -15,6 +15,17 @@ from app.logger import logger
 
 @log_handler
 async def add_task_date(update: Update, context: CallbackContext):
+    """
+    Обрабатывает ввод даты и времени задачи пользователем.
+
+    Args:
+        update (Update): Объект Telegram Update с данными сообщения.
+        context (CallbackContext): Контекст текущего диалога пользователя.
+
+    Returns:
+        int: Следующее состояние ConversationHandler.
+    """
+
     dt_utc = parse_and_validate_datetime(update.message.text)
 
     if not dt_utc:
@@ -42,6 +53,18 @@ async def add_task_date(update: Update, context: CallbackContext):
 
 @log_handler
 async def add_task_text(update: Update, context: CallbackContext):
+    """
+    Обрабатывает ввод текста задачи и создаёт новую задачу.
+    Планирует отправку напоминания через Celery.
+
+    Args:
+        update (Update): Объект Telegram Update.
+        context (CallbackContext): Контекст пользователя.
+
+    Returns:
+        int: Следующее состояние ConversationHandler.
+    """
+
     user_id = update.effective_user.id
     title = update.message.text
     scheduled_time = context.user_data["task_time"]
@@ -72,6 +95,18 @@ async def add_task_text(update: Update, context: CallbackContext):
 
 @log_handler
 async def postpone_date(update: Update, context: CallbackContext):
+    """
+    Обрабатывает изменение времени существующей задачи.
+    Обновляет время задачи в базе данных.
+    Планирует новое напоминание через Celery.
+
+    Args:
+        update (Update): Объект Telegram Update.
+        context (CallbackContext): Контекст пользователя.
+
+    Returns:
+        int: Следующее состояние ConversationHandler.
+    """
     dt_utc = parse_and_validate_datetime(update.message.text)
     if not dt_utc:
         await update.message.reply_text(
