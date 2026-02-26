@@ -257,6 +257,7 @@ async def set_user_city(user_id: int, city: str):
 # ---------------------------
 
 
+# ПОКА НЕ ИСПОЛЬЗУЕТСЯ
 async def get_future_tasks() -> List[Dict]:
     """
     Возвращает список всех будущих задач со статусом 'pending'.
