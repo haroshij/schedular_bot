@@ -27,4 +27,6 @@ app.conf.update(
     result_serializer="json",
     timezone="UTC",
     enable_utc=True,
+    task_acks_late=True,
+    worker_prefetch_multiplier=1,
 )
